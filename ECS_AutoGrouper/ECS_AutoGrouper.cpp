@@ -161,7 +161,6 @@ struct MoveLeftRightTag {};
 struct MoveUpDownTag {};
 
 //using TagCompList = typename ECS::ComponentList<GridPos, MoveRandomTag, MoveLeftRightTag, MoveUpDownTag>;
-// TODO : you have to make it so that this gets pushed down...
 void RunRandomMovement(Grid* grid, size_t* ent, CoreComponentManager<GridPos, MoveRandomTag, MoveLeftRightTag, MoveUpDownTag>* mngr, GridPos* pos) {
     pos->x += (std::rand() % 2 == 0) ? 1 : -1;
     pos->y += (std::rand() % 2 == 0) ? 1 : -1;

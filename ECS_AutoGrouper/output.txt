@@ -1,4 +1,0 @@
-Max on the no-hash was 7.6 for 5000000
-Max on the ys-hash was 7.8 for 5000000
-
-I do not understand this at all!
