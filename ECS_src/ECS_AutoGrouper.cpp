@@ -1,4 +1,4 @@
-// ECS_AutoGrouper.cpp : This file contains the 'main' function. Program execution begins and ends there.
+// ECS_src.cpp : This file contains the 'main' function. Program execution begins and ends there.
 // 
 #include <iostream>
 #include <fstream>
