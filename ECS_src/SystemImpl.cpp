@@ -2,7 +2,7 @@
 // Created by idemaj on 6/21/24.
 //
 
-#include "SystemImpl_Port.h"
+#include "SystemImpl.h"
 
 #define SYSTEM_TEMPLATE template<typename... AllCs, class SharedResources, class... ConCs, class... NotConCs, typename... Args, typename... FullArgs, typename FuncTraits, auto func>
 #define SYSTEM_EXTRACT(AllCs, ConCs, NonConCs, Args, FullArgs, FuncTraits, func) CoreComponentManager<AllCs...>, SharedResources, SContains<ConCs...>, SNotContains<NotConCs...>, FuncArgs<Args...>, FuncArgs<FullArgs...>, FuncTraits, func

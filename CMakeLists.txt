@@ -18,21 +18,21 @@ add_executable(Clique_ECS
         ECS_src/RateChangeBenchmark.h
         ECS_src/SystemImpl.h
         ECS_src/BooleanExprTree.cpp
-        ECS_src/BooleanExprTree_Port.cpp
-        ECS_src/BooleanExprTree_Port.h
-        ECS_src/BoolExprBitVector_Port.cpp
-        ECS_src/BoolExprBitVector_Port.h
-        ECS_src/BoolExprTreeManager_PORT.cpp
-        ECS_src/BoolExprTreeManager_PORT.h
-        ECS_src/ComponentArray_Port.cpp
-        ECS_src/ComponentArray_Port.h
-        ECS_src/ComponentSparseSet_Port.cpp
-        ECS_src/ComponentSparseSet_Port.h
-        ECS_src/CoreComponentManagerImpl_Port.cpp
-        ECS_src/CoreComponentManagerImpl_Port.h
+        ECS_src/BooleanExprTree.cpp
+        ECS_src/BooleanExprTree.h
+        ECS_src/BoolExprBitVector.cpp
+        ECS_src/BoolExprBitVector.h
+        ECS_src/BoolExprTreeManager.cpp
+        ECS_src/BoolExprTreeManager.h
+        ECS_src/ComponentArray.cpp
+        ECS_src/ComponentArray.h
+        ECS_src/ComponentSparseSet.cpp
+        ECS_src/ComponentSparseSet.h
+        ECS_src/CoreComponentManagerImpl.cpp
+        ECS_src/CoreComponentManagerImpl.h
         ECS_src/UTILS_ECS.h
         ECS_src/ECS_Manager_Port.cpp
         ECS_src/ECS_Manager_Port.h
         ECS_src/ESC_Manager_SystemTraits.h
-        ECS_src/SystemImpl_Port.cpp
-        ECS_src/SystemImpl_Port.h)
+        ECS_src/SystemImpl.cpp
+        ECS_src/SystemImpl.h)

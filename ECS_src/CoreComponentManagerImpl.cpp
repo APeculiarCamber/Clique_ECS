@@ -2,7 +2,7 @@
 // Created by idemaj on 6/21/24.
 //
 
-#include "CoreComponentManagerImpl_Port.h"
+#include "CoreComponentManagerImpl.h"
 
 
 template<typename... Cs>

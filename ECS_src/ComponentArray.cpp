@@ -2,7 +2,7 @@
 // Created by idemaj on 6/21/24.
 //
 
-#include "ComponentArray_Port.h"
+#include "ComponentArray.h"
 
 
 template<typename C, size_t N>

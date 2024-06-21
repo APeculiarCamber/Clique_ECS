@@ -2,7 +2,7 @@
 // Created by idemaj on 6/21/24.
 //
 
-#include "BoolExprTreeManager_PORT.h"
+#include "BoolExprTreeManager.h"
 
 template<size_t ArrN>
 char BoolExprTreeManager<ArrN>::AddGroup(const vector<size_t> &has, const vector<size_t> &hasNot,

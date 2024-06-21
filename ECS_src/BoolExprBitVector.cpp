@@ -2,7 +2,7 @@
 // Created by idemaj on 6/21/24.
 //
 
-#include "BoolExprBitVector_Port.h"
+#include "BoolExprBitVector.h"
 
 template<size_t N>
 BoolExprBitVector<N> MakeFromSpecVec(const vector<size_t> &has, const vector<size_t> &notHas) {
