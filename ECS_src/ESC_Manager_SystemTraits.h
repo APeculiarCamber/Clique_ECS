@@ -1,9 +1,12 @@
-#pragma once
-#include "CoreComponentManagerImpl.h"
-#include "SystemImpl.h"
+
+#ifndef SYSTEM_TRAITS_H
+#define SYSTEM_TRAITS_H
+
 #include <type_traits>
 #include <tuple>
 #include <functional>
+#include "CoreComponentManagerImpl.h"
+#include "SystemImpl.h"
 
 namespace ECS {
     template<typename... Cs>
@@ -106,3 +109,5 @@ namespace ECS {
         static constexpr bool UsesRes = false;
     };
 }
+
+#endif

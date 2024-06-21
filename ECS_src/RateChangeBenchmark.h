@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BENCHMARK_H
+#define BENCHMARK_H
 
 namespace Rate {
     struct Position {
@@ -729,7 +730,7 @@ namespace Rate {
 
 
     template <typename A, typename B>
-    __forceinline void AltApplyChangesRES(std::tuple<ChangeSharedResources*, A*, B*>& tup) {
+    /* __forceinline */ void AltApplyChangesRES(std::tuple<ChangeSharedResources*, A*, B*>& tup) {
         auto& a = std::get<A*>(tup);
         auto& b = std::get<B*>(tup);
         auto& res = std::get<ChangeSharedResources*>(tup);
@@ -741,7 +742,7 @@ namespace Rate {
 
 
     template <typename A, typename B>
-    __forceinline void ApplyChangesRES_NoTup(ChangeSharedResources* res, A* a, B* b) {
+    /* __forceinline */ void ApplyChangesRES_NoTup(ChangeSharedResources* res, A* a, B* b) {
         a->x += res->deltaTime * b->x;
         a->y += res->deltaTime * b->y;
         a->z += res->deltaTime * b->z;
@@ -867,3 +868,5 @@ namespace Rate {
         return 0;
     }
 }
+
+#endif

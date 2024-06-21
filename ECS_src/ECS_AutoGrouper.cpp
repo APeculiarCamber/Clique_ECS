@@ -168,7 +168,7 @@ void RunRandomMovement(Grid* grid, size_t* ent, CoreComponentManager<GridPos, Mo
     if (pos->id == 0) {
         pos->x = pos->y = 123;
         EntityMeta meta{ (uint32_t)*ent, 1 };
-        mngr->DeleteComponents<MoveRandomTag>(meta);
+        mngr->template DeleteComponents<MoveRandomTag>(meta);
         MoveUpDownTag newTag;
         mngr->AddComponents(meta, &newTag);
     }

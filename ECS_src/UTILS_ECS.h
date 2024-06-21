@@ -1,14 +1,16 @@
-#pragma once
+
+#ifndef UTIL_H
+#define UTIL_H
 
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
 
-unsigned long BitScanForward64(uint64_t bits) {
-    // TODO TODO TODO
-    std::cout << "TODO: please implement ME!" << std::endl;
-    abort();
-}
+
+unsigned long BitScanForward64(uint64_t bits);
+
+//#define __forceinline __attribute__((always_inline))
+#define __forceinline inline
 
 #define PDEBUG
 #ifndef PDEBUG
@@ -57,3 +59,22 @@ unsigned long BitScanForward64(uint64_t bits) {
         for (auto h : hasNot) PRINT(h << ","); \
         PRINT("}" << std::endl); \
     } while (0)
+
+void Test();
+
+
+
+
+
+
+unsigned long BitScanForward64(uint64_t bits) {
+    // TODO TODO TODO
+    std::cout << "TODO: please implement ME!" << std::endl;
+    abort();
+}
+
+void Test() {
+    std::cout << "print" << std::endl;
+}
+
+#endif

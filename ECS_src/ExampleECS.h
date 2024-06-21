@@ -1,4 +1,6 @@
-#pragma once
+#ifndef EXAMPLE_H
+#define EXAMPLE_H
+
 #include "ECS_Manager.h"
 
 
@@ -21,7 +23,7 @@ struct B_Comp {
 
 // System functions can use a tuple to concat components together, 
 // passing a tuple reference was faster than using multiple pointer parameters in early tests
-__forceinline void RunAB(std::tuple<A_Comp*, B_Comp*>& ab) {
+/* __forceinline */ void RunAB(std::tuple<A_Comp*, B_Comp*>& ab) {
 	A_Comp* a = std::get<A_Comp*>(ab);
 	B_Comp* b = std::get<B_Comp*>(ab);
 	b->val = (a->op == 'A') ? (b->val + b->val) : (b->val * b->val);
@@ -88,3 +90,5 @@ void ExampleECS() {
 	// That's all folks...
 	manager.GetSharedResources()->out.close();
 }
+
+#endif

@@ -1,16 +1,7 @@
-//
-// Created by idemaj on 6/21/24.
-//
-
 #include "ECS_Manager.h"
 
 namespace ECS {
-
-    template<typename Res, typename... Cs>
-    CoreComponentManager<Cs...> *Manager<Res, ComponentList<Cs...>>::Components() {
-        return &_componentManager;
-    }
-
+/*
     template<typename Res, typename... Cs>
     void Manager<Res, ComponentList<Cs...>>::SetTickLimit(size_t limit) {
         _runLimit = limit;
@@ -70,4 +61,5 @@ namespace ECS {
         _systems.push_back(system);
         return _systems.back().get();
     }
+    */
 };

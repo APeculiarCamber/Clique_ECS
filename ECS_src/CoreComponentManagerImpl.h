@@ -1,4 +1,6 @@
-#pragma once
+#ifndef COMP_MANAGER_H
+#define COMP_MANAGER_H
+
 #include "BooleanExprTree.h"
 
 #include <typeindex>
@@ -18,11 +20,11 @@ template<typename... Types>
 struct GContains {};
 template <typename GContains>
 struct IsGHasComponentList {
-    static constexpr bool isNotEmpty = false;
+    static constexpr bool isNotValid = false;
 };
 template <typename... ConList>
 struct IsGHasComponentList<GContains<ConList...>> {
-    static constexpr bool isNotEmpty = true;
+    static constexpr bool isNotValid = true;
 };
 
 /**
@@ -32,16 +34,28 @@ template<typename... Types>
 struct GNotContains {};
 template <typename GNotContains>
 struct IsGHasNotComponent {
-    static constexpr bool isNotEmpty = false;
+    static constexpr bool isNotValid = false;
 };
 template <typename... NotConList>
 struct IsGHasNotComponent<GNotContains<NotConList...>> {
-    static constexpr bool isNotEmpty = true;
+    static constexpr bool isNotValid = true;
 };
 
 // TODO: TOPORT, write this over by the WriteToVec stuff.
 template<typename C, typename... T>
 struct g_extract_types {};
+template<typename... Cs, typename... Types>
+struct g_extract_types<CoreComponentManager<Cs...>, GContains<Types...>> {
+    static constexpr void WriteTypesToVec(CoreComponentManager<Cs...>* mngr, std::vector<size_t>& outVec){
+        ((outVec.push_back(mngr->template getTypeIndex<Types>())), ...);
+    }
+};
+template<typename... Cs, typename... Types>
+struct g_extract_types<CoreComponentManager<Cs...>, GNotContains<Types...>> {
+    static constexpr void WriteTypesToVec(CoreComponentManager<Cs...>* mngr, std::vector<size_t>& outVec)  {
+        ((outVec.push_back(mngr->template getTypeIndex<Types>())), ...);
+    }
+};
 
 struct EntityMeta {
     uint32_t Handle;
@@ -60,7 +74,7 @@ struct NEWandADDComponents {
     EntityMeta _meta = {0, 0};
     std::array<size_t, N> _new;
     std::array<size_t, N> _add;
-    std::unordered_map<size_t, size_t> _addCompInds; // NOTE : if some MAX isNotEmpty, it is not an index which is available yet
+    std::unordered_map<size_t, size_t> _addCompInds; // NOTE : if some MAX isNotValid, it is not an index which is available yet
 };
 
 #define DEFAULT_ENT_SIZE 256
@@ -93,10 +107,13 @@ public:
 
     // Function that returns the index of a provided type in the template parameter list TOPORT: rewrite this its giving
     template <typename T>
-    static constexpr size_t getTypeIndex();
+    static constexpr size_t getTypeIndex() {
+        return getTypeIndexHelper<std::remove_const_t<std::remove_pointer_t<std::remove_cvref_t<std::remove_pointer_t<T>>>>,
+                std::remove_const_t<std::remove_pointer_t<std::remove_cvref_t<std::remove_pointer_t<Cs>>>>...>(0);
+    }
 
 private:
-    // Helper struct to recursively search for the index of a type in the template parameter list TOPORT: rewrite this its giving
+    // Helper struct to recursively search for the index of a type in the template parameter lis
     template <typename T, typename U, typename... Types>
     static constexpr size_t getTypeIndexHelper(size_t index) {
         if constexpr (std::is_same_v<T, U>) {
@@ -106,14 +123,13 @@ private:
             return getTypeIndexHelper<T, Types...>(index + 1);
         }
     }
-
     template <typename T>
     static constexpr size_t getTypeIndexHelper(size_t index) {
-        assert(0 == "Type not found in template parameter list");
+        assert(nullptr == "Type not found in template parameter list");
         return std::numeric_limits<size_t>::max();
     }
 
-    array<unique_ptr<Base_ComponentArray<N>*>, sizeof...(Cs)> _componentArrs{};
+    array<unique_ptr<Base_ComponentArray<N>>, sizeof...(Cs)> _componentArrs{};
 
     size_t CURRENT_UNIQUE_ID = 1;
 
@@ -126,30 +142,12 @@ private:
     BoolExprTreeManager<N> _groupManager;
 
 public:
-    CoreComponentManager() : _entities(DEFAULT_ENT_SIZE), _modIndices(DEFAULT_ENT_SIZE)  {
-
-        // CREATE THE COMPONENT ARRAYS
-        ((_componentArrs[getTypeIndex<Cs>()] = new ComponentArray<Cs, N>(getTypeIndex<Cs>())), ...);
-
-        // Write the entity free list
-        _entityFreeHead = 0;
-        for (size_t i = 0; i < DEFAULT_ENT_SIZE; ++i) {
-            _entities[i]._next = i + 1;
-            _modIndices[i] = std::numeric_limits<size_t>::max();
-        }
-
-        // And the tags
-        ((_tags.at(getTypeIndex<Cs>() / (sizeof(size_t) * CHAR_BIT))
-                  |= (std::is_empty_v<Cs> ? (size_t)1 : (size_t)0) << (getTypeIndex<Cs>() % (sizeof(size_t) * CHAR_BIT))), ...);
-
-        // TODO: don't remember this
-        _groupManager = BoolExprTreeManager<N>(_tags);
-    }
+    CoreComponentManager();
 
     const std::array<size_t, N>& GetTags() {  return _tags; }
     const Entity<N>& GetEntity(size_t ind) { return _entities[ind]; }
     template <typename C> // TRUST THE METAPROGRAMMING
-    ComponentArray<C, N>* GetComponentArray() { return static_cast<ComponentArray<C, N>*>(_componentArrs[getTypeIndex<C>()]); }
+    ComponentArray<C, N>* GetComponentArray() { return static_cast<ComponentArray<C, N>*>(_componentArrs[getTypeIndex<C>()].get()); }
 
     template <typename... As>
     void AddComponentBitVectorByTypes(std::array<size_t, N>* arr);
@@ -183,17 +181,16 @@ public:
     bool AddComponents(EntityMeta meta, As*... cmps);
 
 
+
     template <typename... As>
     bool DeleteComponents(EntityMeta meta);
 
+    // TODO : this is really problematic,,, need to get these classes OUT!
+
     void DEBUG_PRINT_RECORD(NEWandADDComponents<N>& mod);
 
+
     bool CommitEntityChanges();
-
-
-
-
-
 
     /*
     * TODO:
@@ -208,9 +205,33 @@ public:
     * TODO : fix this to be better about right nodes and get those matched components stuff
     * Given a bool expr tree, add its nodes to the component arrays which are relevant to it!
     */
-    void SwingAtComponents(BoolExprTree<N>* tree);
+    void SwingAtComponents(BoolExprTree<N>* tree) {
+        std::unordered_set<size_t> unhandledCompoents(tree->_explicitAffectedComponents);
+
+        BoolExprNode<N>* node = tree->_root.get();
+        while (node) {
+            std::unordered_set<size_t> affectedComponents;
+            GetHasBits(node->_bitRep, affectedComponents);
+
+            // For each component which the current node affects explicitly,
+            // if an above node hasn't already contibuted to a component, make this node the contributor!
+            for (size_t comp : affectedComponents) {
+                auto it = unhandledCompoents.find(comp);
+                if (it == unhandledCompoents.end()) continue;
+                unhandledCompoents.erase(it);
+
+                PRINT("Affixxing for " << comp << " with tree " << tree << std::endl);
+                _componentArrs[comp]->AffixExprTreeToComponentArray(node);
+            }
+
+            node = node->_left.get();
+        }
+    }
 };
 
+#include "CoreComponentManagerImpl.cpp"
+
+#endif
 
 // make | array
 // for N

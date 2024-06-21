@@ -1,4 +1,9 @@
+// WARNING: DUE TO TEMPLATE PARAMETERS, THIS IS NOT A TRANSLATION FILE, IT IS AN IMPLEMENTATION INCLUDED DIRECTLY INTO THE HEADER, BooleanExprTree.h
+
+#ifndef IMPL_BOOL_EXPR_TREE_CPP
+#define IMPL_BOOL_EXPR_TREE_CPP
 #include "BooleanExprTree.h"
+
 
 template<size_t ArrN>
 bool BoolExprNode<ArrN>::ContainsExpr(BoolExprBitVector<ArrN> &bitRep) {
@@ -14,8 +19,8 @@ bool BoolExprNode<ArrN>::ContainsExpr_AssumeParent(BoolExprBitVector<ArrN> &bitR
     // Lower level expression IMPLY higher level containing expressions
     if (_hasBitRep) return BitImplies(bitRep, _bitRep);
     // If we are a right child, we contain it iff: our parent contains it, and the left-explicit child contains NONE of it
-    BoolExprNode<ArrN>* matureSibling = _parent->_left->_hasBitRep ? _parent->_left : _parent->_right;
-    return true && BitImpliesNot(bitRep, matureSibling->_bitRep);
+    BoolExprNode<ArrN>* matureSibling = _parent->_left->_hasBitRep ? _parent->_left.get() : _parent->_right.get();
+    return BitImpliesNot(bitRep, matureSibling->_bitRep);
 }
 
 template<size_t ArrN>
@@ -24,9 +29,9 @@ BoolExprNode<ArrN> *BoolExprNode<ArrN>::AddExpr(BoolExprBitVector<ArrN> &bitRep)
         // Handle case of leaf
         if (_left == nullptr) {
             PRINT("    Adding to THIS node" << std::endl);
-            _left = new BoolExprNode<ArrN>(this, bitRep);
-            _right = new BoolExprNode<ArrN>(this);
-            return _left;
+            _left.reset(new BoolExprNode<ArrN>(this, bitRep));
+            _right.reset(new BoolExprNode<ArrN>(this));
+            return _left.get();
         }
         else {
             if (_left->ContainsExpr_AssumeParent(bitRep)) {
@@ -57,14 +62,14 @@ BoolExprNode<ArrN> *BoolExprNode<ArrN>::AddExprImplicit(BoolExprBitVector<ArrN> 
         if (_left == nullptr) {
             PRINT("    Adding IMPLICITLY to THIS node" << std::endl);
             if (onFarLeft) {
-                _right = new BoolExprNode<ArrN>(this, bitRep, false);
-                _left = new BoolExprNode<ArrN>(this);
-                return _right;
+                _right.reset(new BoolExprNode<ArrN>(this, bitRep, false));
+                _left.reset(new BoolExprNode<ArrN>(this));
+                return _right.get();
             }
             else {
-                _left = new BoolExprNode<ArrN>(this, bitRep, false);
-                _right = new BoolExprNode<ArrN>(this);
-                return _left;
+                _left.reset(new BoolExprNode<ArrN>(this, bitRep, false));
+                _right.reset(new BoolExprNode<ArrN>(this));
+                return _left.get();
             }
         }
         else {
@@ -138,8 +143,8 @@ char BoolExprTree<ArrN>::Add(BoolExprBitVector<ArrN> &a, const array<size_t, Arr
 
     if (_root == nullptr) {
         PRINT("    Adding at root" << std::endl);
-        _root = new BoolExprNode<ArrN>(nullptr, a);
-        newNode = _root;
+        _root.reset(new BoolExprNode<ArrN>(nullptr, a));
+        newNode = _root.get();
     }
     else {
         PRINT("    Adding to tree" << std::endl);
@@ -164,8 +169,8 @@ char BoolExprTree<ArrN>::AddImplicit(BoolExprBitVector<ArrN> &a) {
     if (_root == nullptr) {
         assert(0 == "This is absolutely not OK: we cannot add implicitly add the root");
         PRINT("    Adding at root" << std::endl);
-        _root = new BoolExprNode<ArrN>(nullptr, a);
-        newNode = _root;
+        _root.reset(new BoolExprNode<ArrN>(nullptr, a));
+        newNode = _root.get();
     }
     else {
         PRINT("    Adding to tree IMPLICITLY" << std::endl);
@@ -192,3 +197,4 @@ bool BoolExprTree<ArrN>::CouldBeAdded(BoolExprBitVector<ArrN> &a) {
     return _root->CanAdd(a);
 }
 
+#endif

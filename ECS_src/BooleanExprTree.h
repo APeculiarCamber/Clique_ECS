@@ -1,4 +1,7 @@
-#pragma once
+#ifndef EXPR_TREE_H
+#define EXPR_TREE_H
+
+
 #include <array>
 #include <vector>
 #include <unordered_set>
@@ -88,3 +91,7 @@ public:
 
     char AddImplicit(BoolExprBitVector<ArrN>& a);
 };
+
+#include "BooleanExprTree.cpp"
+
+#endif
