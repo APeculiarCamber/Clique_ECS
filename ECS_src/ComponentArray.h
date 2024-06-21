@@ -31,7 +31,7 @@ public:
 		if (_right) delete _right;
 	}
 
-	bool IsEquivalent(BoolExprBitVector<N>& expr) override {
+	constexpr bool IsEquivalent(BoolExprBitVector<N>& expr) override {
 		return BitEquiv(_bitRep, expr);
 	}
 	size_t GetNumComponents() override {

@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include <bitset>
 #include <limits>
-#include "PrintDebugger.h"
+#include "UTILS_ECS.h"
 
 using namespace std;
 
@@ -84,7 +84,7 @@ BoolExprBitVector<N> MakeFromStrictSpec(std::array<size_t, N> specs) {
 
 template <size_t N>
 bool BitImplies(const BoolExprBitVector<N>& a, const BoolExprBitVector<N>& b) {
-	// a implies b when, 
+	// a implies b when,
 		// a.has is 1 and CARES for all b.has is 1,
 		// a.has is 0 and CARES for all b.has is 0 AND b CARES.
 	bool implies = true;
@@ -121,7 +121,7 @@ bool BitImpliesNot(const BoolExprBitVector<N>& a, const BoolExprBitVector<N>& b)
 }
 
 template <size_t N>
-bool BitEquiv(const BoolExprBitVector<N>& a, const BoolExprBitVector<N>& b) {
+constexpr bool BitEquiv(const BoolExprBitVector<N>& a, const BoolExprBitVector<N>& b) {
 	return BitImplies(a, b) && BitImplies(b, a);
 }
 
@@ -129,7 +129,7 @@ bool BitEquiv(const BoolExprBitVector<N>& a, const BoolExprBitVector<N>& b) {
 
 template <size_t N>
 bool BitImplies(const std::array<size_t, N>& a, const BoolExprBitVector<N>& b) {
-	// a implies b when, 
+	// a implies b when,
 		// a.has is 1 and CARES for all b.has is 1,
 		// a.has is 0 and CARES for all b.has is 0 AND b CARES.
 	bool implies = true;

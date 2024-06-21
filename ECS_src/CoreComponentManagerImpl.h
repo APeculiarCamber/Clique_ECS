@@ -1,13 +1,12 @@
 #pragma once
 #include "BooleanExprTree.h"
-#include "EntityImpl.h"
 
 #include <typeindex>
 #include <type_traits>
 
 #include "ComponentArray.h"
 
-#include "PrintDebugger.h"
+#include "UTILS_ECS.h"
 
 template <typename... Cs>
 class CoreComponentManager;
@@ -46,7 +45,7 @@ struct NEWandADDComponents {
 	EntityMeta _meta = {0, 0};
     std::array<size_t, N> _new;
     std::array<size_t, N> _add;
-    std::unordered_map<size_t, size_t> _addCompInds; // TODO : if some MAX value, it is not an index which is available yet
+    std::unordered_map<size_t, size_t> _addCompInds; // TODO : if some MAX isNotEmpty, it is not an index which is available yet
 };
 
 #define DEFAULT_ENT_SIZE 256
@@ -79,8 +78,8 @@ public:
     // Function that returns the index of a provided type in the template parameter list
     template <typename T>
     static constexpr size_t getTypeIndex() {
-        return getTypeIndexHelper<std::remove_const_t<std::remove_pointer_t<std::_Remove_cvref_t<std::remove_pointer_t<T>>>>,
-            std::remove_const_t<std::remove_pointer_t<std::_Remove_cvref_t<std::remove_pointer_t<Cs>>>>...>(0);
+        return getTypeIndexHelper<std::remove_const_t<std::remove_pointer_t<std::remove_cvref_t<std::remove_pointer_t<T>>>>,
+            std::remove_const_t<std::remove_pointer_t<std::remove_cvref_t<std::remove_pointer_t<Cs>>>>...>(0);
     }
 
 private:
@@ -276,147 +275,15 @@ public:
 	}
 
 	template <typename... As>
-	bool AddComponents(EntityMeta meta, As*... cmps) {
-		if (_entities[meta.Handle]._metaData.UniqueID != meta.UniqueID) return false;
-		PRINT("ATTEMPTING ADD FOR: " << meta.Handle << std::endl);
-
-		// Get the mod index
-		size_t modInd;
-		if (_modIndices[meta.Handle] != std::numeric_limits<size_t>::max()) {
-			PRINT("    ALREADY HAS A MOD RECORD!" << std::endl);
-			modInd = _modIndices[meta.Handle];
-		}
-		else {
-			modInd = _NEWAndADD_Components.size();
-			_NEWAndADD_Components.emplace_back();
-			_NEWAndADD_Components.back()._new = _entities[meta.Handle]._components;
-		}
-		_modIndices[meta.Handle] = modInd;
-
-		// In the current scheme, if you try to add a component that it already has, that component will be overwritten, which is FINE?
-		// Set the new bits for the component bit vector
-		AddComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._new);
-		AddComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._add);
-		// Add all components to the component array
-		(_NEWAndADD_Components[modInd]._addCompInds.insert_or_assign(getTypeIndex<As>(),
-			static_cast<ComponentArray<As, N>*>(_componentArrs[getTypeIndex<As>()])->RegisterNewComponent(cmps)), ...);
-
-		return true;
-	}
+	bool AddComponents(EntityMeta meta, As*... cmps);
 
 
 	template <typename... As>
-	bool DeleteComponents(EntityMeta meta) {
-		if (_entities[meta.Handle]._metaData.UniqueID != meta.UniqueID) return false;
+	bool DeleteComponents(EntityMeta meta);
 
-		PRINT("ATTEMPTING DELETE FOR: " << meta.Handle << std::endl);
-		// Get the mod index
-		size_t modInd;
-		if (_modIndices[meta.Handle] != std::numeric_limits<size_t>::max()) {
-			modInd = _modIndices[meta.Handle];
-		}
-		else {
-			modInd = _NEWAndADD_Components.size();
-			_NEWAndADD_Components.emplace_back();
-			_NEWAndADD_Components.back()._new = _entities[meta.Handle]._components;
-		}
-		_modIndices[meta.Handle] = modInd;
+	void DEBUG_PRINT_RECORD(NEWandADDComponents<N>& mod);
 
-
-		// remove from both, in a case of an add that we are now removing
-		RemoveComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._new);
-		RemoveComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._add);
-		return true;
-	}
-
-	void DEBUG_PRINT_RECORD(NEWandADDComponents<N>& mod) {
-		PRINT("For Entity " << mod._meta.Handle << "(" << mod._meta.UniqueID << "): " << std::endl);
-		unordered_set<size_t> has;
-		GetHasBits(_entities[mod._meta.Handle]._components, has);
-		PRINT("old: "); for (auto s : has) PRINT(s << ",");
-		PRINT(" ::: ");
-
-		has.clear();
-		GetHasBits(mod._new, has);
-		PRINT("new: ");  for (auto s : has) PRINT(s << ",");
-		PRINT(" ::: ");
-
-		has.clear();
-		GetHasBits(mod._add, has);
-		PRINT("add: ");  for (auto s : has) PRINT(s << ",");
-		PRINT(std::endl);
-
-		has.clear();
-		std::array<size_t, N> toInform = mod._new | _entities[mod._meta.Handle]._components;
-		GetHasBits(toInform, has);
-		PRINT("TOINFORMS: ");  for (auto s : has) PRINT(s << ",");
-		PRINT(std::endl);
-	}
-
-	bool CommitEntityChanges() {
-		if (_NEWAndADD_Components.size() == 0) return false;
-		PRINT("TRYING TO COMMIT ENTITIES" << std::endl);
-
-		for (NEWandADDComponents<N>& mod : _NEWAndADD_Components) {
-			//DEBUG_PRINT_RECORD(mod);
-
-			// update the entity IDs
-			Entity<N>* ent = &_entities[mod._meta.Handle];
-			ent->_metaData = mod._meta;
-
-			std::array<size_t, N> toInform = mod._new | ent->_components; // TODO : fix this to a function if it dont compile
-
-			for (size_t n = 0; n < N; ++n) {
-				size_t info = toInform.at(n);
-				size_t step = (n * (sizeof(size_t) * CHAR_BIT));
-
-				while (info != 0) {
-					unsigned long bit = 0;
-					size_t oldN = ent->_components.at(n), newN = mod._new.at(n), addN = mod._add.at(n);
-					
-					_BitScanForward64(&bit, info);
-					size_t bitMask = (((size_t)1) << bit);
-					// TODO:  ensure this works correctly for DELETES!!!!!
-					bool isDel = (newN & bitMask) == 0;
-					bool isAdd = (oldN & bitMask) == 0;
-					bool isMove = (addN & bitMask) == 0;
-					/*
-						if NEW has no c : COMP.DELETE(ent) 	   // add to delete array
-						if OLD has no c : COMP.ADD(ent, ind)    // add to add array
-						if ADD has no c : COMP.MOD(ent)	      // add to BOTH and write comp to back of ADD array, or DONT if same
-						else : COMP.MOD_ADD(ent, ind)// add to BOTH (and we have ind already), or neither (AND WRITE DIRECT?)
-					*/
-					if (isDel)
-						_componentArrs[step + bit]->RemoveComponent(ent->_metaData.Handle, ent->_components);
-					else if (isAdd) // todo : be care of this and overwrite, TODO: ensure that add comp ind are handled right IN HERE!!!
-						_componentArrs[step + bit]->AddComponent(ent->_metaData.Handle, mod._addCompInds[step + bit], mod._new);
-					else if (isMove) {
-						PRINT("COMPONENT " << step + bit << " IS A MOVE!" << std::endl);
-						_componentArrs[step + bit]->MoveComponent(ent->_metaData.Handle, ent->_components, mod._new);
-					}
-					else
-						_componentArrs[step + bit]->OverwriteComponentForHandle(ent->_metaData.Handle, mod._addCompInds[step + bit], ent->_components, mod._new);
-					// size_t entityHandle, size_t newCompInd, std::array<size_t, N> oldCompID, std::array<size_t, N> newCompID
-
-					// clear the processed bit
-					info &= ~((size_t)1 << bit);
-				}
-			}
-			// UPDATE THE COMPONENT ARRAY
-			ent->_components = mod._new;
-
-			// Reset the mod index
-			_modIndices[ent->_metaData.Handle] = std::numeric_limits<size_t>::max();
-		}
-
-		_NEWAndADD_Components.clear();
-
-		bool good = true;
-		for (Base_ComponentArray<N>* compArray : _componentArrs) {
-			good &= compArray->CommitComponentUpdates(_entities.size());
-		}
-		return true;
-	}
+	bool CommitEntityChanges();
 
 
 
@@ -427,38 +294,225 @@ public:
 	* TODO:
 	* If the entities signiture implies the system's, then the system can and should perform on it
 	*/
-	bool EntityValidForSystem(size_t entHandle, BoolExprBitVector<N>& systemExpr) {
-		return BitImplies(_entities[entHandle]._components, systemExpr);
-	}
+	bool EntityValidForSystem(size_t entHandle, BoolExprBitVector<N>& systemExpr);
 
 	/*
 	* TODO : rename this
 	* TODO : fix this to be better about right nodes and get those matched components stuff
 	* Given a bool expr tree, add its nodes to the component arrays which are relevant to it!
 	*/
-	void SwingAtComponents(BoolExprTree<N>* tree) {
-		std::unordered_set<size_t> unhandledCompoents(tree->_explicitAffectedComponents);
-
-		BoolExprNode<N>* node = tree->_root;
-		while (node) {
-			std::unordered_set<size_t> affectedComponents;
-			GetHasBits(node->_bitRep, affectedComponents);
-
-			// For each component which the current node affects explicitly, 
-			// if an above node hasn't already contibuted to a component, make this node the contributor!
-			for (size_t comp : affectedComponents) {
-				auto it = unhandledCompoents.find(comp);
-				if (it == unhandledCompoents.end()) continue;
-				unhandledCompoents.erase(it);
-
-				PRINT("Affixxing for " << comp << " with tree " << tree << std::endl);
-				_componentArrs[comp]->AffixExprTreeToComponentArray(node);
-			}
-
-			node = node->_left;
-		}
-	}
+	void SwingAtComponents(BoolExprTree<N>* tree);
 };
+
+template<typename... Cs>
+void CoreComponentManager<Cs...>::DEBUG_PRINT_RECORD(NEWandADDComponents<N> &mod) {
+    PRINT("For Entity " << mod._meta.Handle << "(" << mod._meta.UniqueID << "): " << std::endl);
+    unordered_set<size_t> has;
+    GetHasBits(_entities[mod._meta.Handle]._components, has);
+    PRINT("old: "); for (auto s : has) PRINT(s << ",");
+    PRINT(" ::: ");
+
+    has.clear();
+    GetHasBits(mod._new, has);
+    PRINT("new: ");  for (auto s : has) PRINT(s << ",");
+    PRINT(" ::: ");
+
+    has.clear();
+    GetHasBits(mod._add, has);
+    PRINT("add: ");  for (auto s : has) PRINT(s << ",");
+    PRINT(std::endl);
+
+    has.clear();
+    std::array<size_t, N> toInform = mod._new | _entities[mod._meta.Handle]._components;
+    GetHasBits(toInform, has);
+    PRINT("TOINFORMS: ");  for (auto s : has) PRINT(s << ",");
+    PRINT(std::endl);
+}
+
+template<typename... Cs>
+bool CoreComponentManager<Cs...>::EntityValidForSystem(size_t entHandle, BoolExprBitVector<N> &systemExpr) {
+    return BitImplies(_entities[entHandle]._components, systemExpr);
+}
+
+template<typename... Cs>
+void CoreComponentManager<Cs...>::SwingAtComponents(BoolExprTree<N> *tree) {
+    std::unordered_set<size_t> unhandledCompoents(tree->_explicitAffectedComponents);
+
+    BoolExprNode<N>* node = tree->_root;
+    while (node) {
+        std::unordered_set<size_t> affectedComponents;
+        GetHasBits(node->_bitRep, affectedComponents);
+
+        // For each component which the current node affects explicitly,
+        // if an above node hasn't already contibuted to a component, make this node the contributor!
+        for (size_t comp : affectedComponents) {
+            auto it = unhandledCompoents.find(comp);
+            if (it == unhandledCompoents.end()) continue;
+            unhandledCompoents.erase(it);
+
+            PRINT("Affixxing for " << comp << " with tree " << tree << std::endl);
+            _componentArrs[comp]->AffixExprTreeToComponentArray(node);
+        }
+
+        node = node->_left;
+    }
+}
+
+template<typename... Cs>
+template<typename... As>
+bool CoreComponentManager<Cs...>::DeleteComponents(EntityMeta meta) {
+    if (_entities[meta.Handle]._metaData.UniqueID != meta.UniqueID) return false;
+
+    PRINT("ATTEMPTING DELETE FOR: " << meta.Handle << std::endl);
+    // Get the mod index
+    size_t modInd;
+    if (_modIndices[meta.Handle] != std::numeric_limits<size_t>::max()) {
+        modInd = _modIndices[meta.Handle];
+    }
+    else {
+        modInd = _NEWAndADD_Components.size();
+        _NEWAndADD_Components.emplace_back();
+        _NEWAndADD_Components.back()._new = _entities[meta.Handle]._components;
+    }
+    _modIndices[meta.Handle] = modInd;
+
+
+    // remove from both, in a case of an add that we are now removing
+    RemoveComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._new);
+    RemoveComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._add);
+    return true;
+}
+
+template<typename... Cs>
+bool CoreComponentManager<Cs...>::CommitEntityChanges() {
+    if (_NEWAndADD_Components.size() == 0) return false;
+    PRINT("TRYING TO COMMIT ENTITIES" << std::endl);
+
+    for (NEWandADDComponents<N>& mod : _NEWAndADD_Components) {
+        //DEBUG_PRINT_RECORD(mod);
+
+        // update the entity IDs
+        Entity<N>* ent = &_entities[mod._meta.Handle];
+        ent->_metaData = mod._meta;
+
+        std::array<size_t, N> toInform = mod._new | ent->_components; // TODO : fix this to a function if it dont compile
+
+        for (size_t n = 0; n < N; ++n) {
+            size_t info = toInform.at(n);
+            size_t step = (n * (sizeof(size_t) * CHAR_BIT));
+
+            while (info != 0) {
+                unsigned long bit = 0;
+                size_t oldN = ent->_components.at(n), newN = mod._new.at(n), addN = mod._add.at(n);
+
+                _BitScanForward64(&bit, info);
+                size_t bitMask = (((size_t)1) << bit);
+                // TODO:  ensure this works correctly for DELETES!!!!!
+                bool isDel = (newN & bitMask) == 0;
+                bool isAdd = (oldN & bitMask) == 0;
+                bool isMove = (addN & bitMask) == 0;
+                /*
+                    if NEW has no c : COMP.DELETE(ent) 	   // add to delete array
+                    if OLD has no c : COMP.ADD(ent, ind)    // add to add array
+                    if ADD has no c : COMP.MOD(ent)	      // add to BOTH and write comp to back of ADD array, or DONT if same
+                    else : COMP.MOD_ADD(ent, ind)// add to BOTH (and we have ind already), or neither (AND WRITE DIRECT?)
+                */
+                if (isDel)
+                    _componentArrs[step + bit]->RemoveComponent(ent->_metaData.Handle, ent->_components);
+                else if (isAdd) // todo : be care of this and overwrite, TODO: ensure that add comp ind are handled right IN HERE!!!
+                    _componentArrs[step + bit]->AddComponent(ent->_metaData.Handle, mod._addCompInds[step + bit], mod._new);
+                else if (isMove) {
+                    PRINT("COMPONENT " << step + bit << " IS A MOVE!" << std::endl);
+                    _componentArrs[step + bit]->MoveComponent(ent->_metaData.Handle, ent->_components, mod._new);
+                }
+                else
+                    _componentArrs[step + bit]->OverwriteComponentForHandle(ent->_metaData.Handle, mod._addCompInds[step + bit], ent->_components, mod._new);
+                // size_t entityHandle, size_t newCompInd, std::array<size_t, N> oldCompID, std::array<size_t, N> newCompID
+
+                // clear the processed bit
+                info &= ~((size_t)1 << bit);
+            }
+        }
+        // UPDATE THE COMPONENT ARRAY
+        ent->_components = mod._new;
+
+        // Reset the mod index
+        _modIndices[ent->_metaData.Handle] = std::numeric_limits<size_t>::max();
+    }
+
+    _NEWAndADD_Components.clear();
+
+    bool good = true;
+    for (Base_ComponentArray<N>* compArray : _componentArrs) {
+        good &= compArray->CommitComponentUpdates(_entities.size());
+    }
+    return true;
+}
+
+template<typename... Cs>
+bool CoreComponentManager<Cs...>::CommitEntityChanges() {
+    if (_NEWAndADD_Components.size() == 0) return false;
+    PRINT("TRYING TO COMMIT ENTITIES" << std::endl);
+
+    for (NEWandADDComponents<N>& mod : _NEWAndADD_Components) {
+        //DEBUG_PRINT_RECORD(mod);
+
+        // update the entity IDs
+        Entity<N>* ent = &_entities[mod._meta.Handle];
+        ent->_metaData = mod._meta;
+
+        std::array<size_t, N> toInform = mod._new | ent->_components;
+
+        for (size_t n = 0; n < N; ++n) {
+            size_t info = toInform.at(n);
+            size_t step = (n * (sizeof(size_t) * CHAR_BIT));
+
+            while (info != 0) {
+                size_t oldN = ent->_components.at(n), newN = mod._new.at(n), addN = mod._add.at(n);
+
+                unsigned long bit = BitScanForward64(info);
+                size_t bitMask = (((size_t)1) << bit);
+
+                bool isDel = (newN & bitMask) == 0;
+                bool isAdd = (oldN & bitMask) == 0;
+                bool isMove = (addN & bitMask) == 0;
+                /*
+                    if NEW has no c : COMP.DELETE(ent) 	   // add to delete array
+                    if OLD has no c : COMP.ADD(ent, ind)    // add to add array
+                    if ADD has no c : COMP.MOD(ent)	      // add to BOTH and write comp to back of ADD array, or DONT if same
+                    else : COMP.MOD_ADD(ent, ind)// add to BOTH (and we have ind already), or neither (AND WRITE DIRECT?)
+                */
+                if (isDel)
+                    _componentArrs[step + bit]->RemoveComponent(ent->_metaData.Handle, ent->_components);
+                else if (isAdd) // todo : be care of this and overwrite, TODO: ensure that add comp ind are handled right IN HERE!!!
+                    _componentArrs[step + bit]->AddComponent(ent->_metaData.Handle, mod._addCompInds[step + bit], mod._new);
+                else if (isMove) {
+                    PRINT("COMPONENT " << step + bit << " IS A MOVE!" << std::endl);
+                    _componentArrs[step + bit]->MoveComponent(ent->_metaData.Handle, ent->_components, mod._new);
+                }
+                else
+                    _componentArrs[step + bit]->OverwriteComponentForHandle(ent->_metaData.Handle, mod._addCompInds[step + bit], ent->_components, mod._new);
+                // size_t entityHandle, size_t newCompInd, std::array<size_t, N> oldCompID, std::array<size_t, N> newCompID
+
+                // clear the processed bit
+                info &= ~((size_t)1 << bit);
+            }
+        }
+        // UPDATE THE COMPONENT ARRAY
+        ent->_components = mod._new;
+
+        // Reset the mod index
+        _modIndices[ent->_metaData.Handle] = std::numeric_limits<size_t>::max();
+    }
+
+    _NEWAndADD_Components.clear();
+
+    bool good = true;
+    for (Base_ComponentArray<N>* compArray : _componentArrs) {
+        good &= compArray->CommitComponentUpdates(_entities.size());
+    }
+    return true;
+}
 
 template<typename... Cs, typename... Types>
 struct g_extract_types<CoreComponentManager<Cs...>, GContains<Types...>> {

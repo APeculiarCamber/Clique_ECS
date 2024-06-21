@@ -4,7 +4,8 @@
 #include <unordered_set>
 #include <bitset>
 #include <cassert>
-#include "PrintDebugger.h"
+#include <memory>
+#include "UTILS_ECS.h"
 
 #define EXPLICIT_ADD 1
 #define IMPLICIT_ADD 2
@@ -12,31 +13,19 @@
 
 using namespace std;
 
-
 template <size_t ArrN>
 class BoolExprNode {
 public:
 	BoolExprNode<ArrN>* _parent = nullptr;
-	BoolExprNode<ArrN>* _left = nullptr;
-	BoolExprNode<ArrN>* _right = nullptr;
+    unique_ptr<BoolExprNode<ArrN>> _left = nullptr;
+	unique_ptr<BoolExprNode<ArrN>> _right = nullptr;
 	bool _explicitRep = false, _hasBitRep = false;
 	BoolExprBitVector<ArrN> _bitRep;
 
-	BoolExprNode(BoolExprNode<ArrN>* parent) : _parent(parent), _bitRep() {
-		_explicitRep = false, _hasBitRep = false; 
-		_bitRep = {};
-	}
-	BoolExprNode(BoolExprNode<ArrN>* parent, BoolExprBitVector<ArrN>& bitRep, bool explRep=true) : _parent(parent) {
-		_explicitRep = (parent == nullptr || (parent->_explicitRep) && explRep);
-
-		_bitRep._CaresAbout = bitRep._CaresAbout;
-		_bitRep._mustHave = bitRep._mustHave;
-		_hasBitRep = true;
-	}
-	~BoolExprNode() {
-		if (_left) delete _left;
-		if (_right) delete _right;
-	}
+	explicit BoolExprNode(BoolExprNode<ArrN>* parent) : _parent(parent), _explicitRep(false), _hasBitRep(false), _bitRep{} {}
+	BoolExprNode(BoolExprNode<ArrN>* parent, BoolExprBitVector<ArrN>& bitRep, bool explRep=true) : _parent(parent),
+        _explicitRep(parent == nullptr || (parent->_explicitRep) && explRep),
+        _bitRep{ ._mustHave = bitRep._mustHave, ._CaresAbout = bitRep._CaresAbout }, _hasBitRep(true) {}
 
 	/**
 	* Collect all the component types which are included as ONs in the far left side EXPLICIT nodes

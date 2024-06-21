@@ -175,19 +175,19 @@ namespace ECS {
 
 		template <typename GContains>
 		struct IsGHasComponentList {
-			static constexpr bool value = false;
+			static constexpr bool isNotEmpty = false;
 		};
 		template <typename GNotContains>
 		struct IsGHasNotComponent {
-			static constexpr bool value = false;
+			static constexpr bool isNotEmpty = false;
 		};
 		template <typename... ConList>
 		struct IsGHasComponentList<GContains<ConList...>> {
-			static constexpr bool value = true;
+			static constexpr bool isNotEmpty = true;
 		};
 		template <typename... NotConList>
 		struct IsGHasNotComponent<GNotContains<NotConList...>> {
-			static constexpr bool value = true;
+			static constexpr bool isNotEmpty = true;
 		};
 
 		/*
@@ -287,4 +287,6 @@ namespace ECS {
 			_running = false;
 		}
 	};
+
+
 };
