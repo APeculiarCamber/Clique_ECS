@@ -31,8 +31,8 @@ add_executable(Clique_ECS
         ECS_src/CoreComponentManagerImpl.cpp
         ECS_src/CoreComponentManagerImpl.h
         ECS_src/UTILS_ECS.h
-        ECS_src/ECS_Manager_Port.cpp
-        ECS_src/ECS_Manager_Port.h
+        ECS_src/ECS_Manager.cpp
+        ECS_src/ECS_Manager.h
         ECS_src/ESC_Manager_SystemTraits.h
         ECS_src/SystemImpl.cpp
         ECS_src/SystemImpl.h)
