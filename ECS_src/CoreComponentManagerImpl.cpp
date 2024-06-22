@@ -1,7 +1,5 @@
-// WARNING: THIS IS NOT A TRANSLATION FILE DUE TO THE TEMPLATES, IT IS AN IMPLEMENTATION FILE, INCLUDED DIRECTLY INTO THE HEADER
+// WARNING: THIS IS NOT A TRANSLATION FILE DUE TO THE TEMPLATES, IT IS AN IMPLEMENTATION FILE, INCLUDED DIRECTLY INTO THE HEADER, CoreComponentManagerImpl.h
 
-#ifndef IMPL_COMP_MANAGER_CPP
-#define IMPL_COMP_MANAGER_CPP
 #include "CoreComponentManagerImpl.h"
 
 template<typename... Cs>
@@ -284,4 +282,4 @@ bool CoreComponentManager<Cs...>::DeleteEntity(uint32_t handle, uint32_t uniqueI
         assert(_NEWAndADD_Components.back()._add.at(i) == 0);
     }
 }
-#endif
+

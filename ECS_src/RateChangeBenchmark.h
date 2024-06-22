@@ -1,6 +1,8 @@
 #ifndef BENCHMARK_H
 #define BENCHMARK_H
 
+#include <random>
+
 namespace Rate {
     struct Position {
         float x, y, z;
@@ -837,7 +839,7 @@ namespace Rate {
             });
 
         if (shufflePtrs)
-            std::shuffle(ptrPolyChanger.begin(), ptrPolyChanger.end(), std::default_random_engine());
+            std::shuffle(ptrPolyChanger.begin(), ptrPolyChanger.end(), std::default_random_engine(time(nullptr)));
         if (sortPtrs)
             std::sort(ptrPolyChanger.begin(), ptrPolyChanger.end(), [](BaseChanger* p1, BaseChanger* p2) {return p1->ID() < p2->ID(); });
 

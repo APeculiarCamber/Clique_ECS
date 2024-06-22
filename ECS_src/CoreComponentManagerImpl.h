@@ -202,7 +202,6 @@ public:
 
     /*
     * TODO : rename this
-    * TODO : fix this to be better about right nodes and get those matched components stuff
     * Given a bool expr tree, add its nodes to the component arrays which are relevant to it!
     */
     void SwingAtComponents(BoolExprTree<N>* tree) {

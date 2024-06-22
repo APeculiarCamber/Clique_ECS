@@ -1,7 +1,6 @@
 // WARNING: DUE TO TEMPLATE PARAMETERS, THIS IS NOT A TRANSLATION FILE, IT IS AN IMPLEMENTATION INCLUDED DIRECTLY INTO THE HEADER, BooleanExprTree.h
 
-#ifndef IMPL_BOOL_EXPR_TREE_CPP
-#define IMPL_BOOL_EXPR_TREE_CPP
+
 #include "BooleanExprTree.h"
 
 
@@ -196,5 +195,3 @@ bool BoolExprTree<ArrN>::CouldBeAdded(BoolExprBitVector<ArrN> &a) {
     // Check if it can be added
     return _root->CanAdd(a);
 }
-
-#endif

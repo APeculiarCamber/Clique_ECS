@@ -14,13 +14,18 @@ namespace ECS {
     };
 
 
-    template<typename Res, size_t N, typename CompList, typename Fn>
-    struct sys_function_traits {
-    };
 
-/*********************************************************************************************
-* FUNCTION Resource Types
-**********************************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
 /**
  * These struct impls are used to statically analyze and determine properties of system functions.
  * It is aggressively SINEFAE.
@@ -29,6 +34,15 @@ namespace ECS {
  * Systems can request the component manager; in that case, the system requires entity IDs.
  * Systems can request the single Resource, distinct from the component system; in that case we take special care to provide it.
  */
+
+    template<typename Res, size_t N, typename CompList, typename Fn>
+    struct sys_function_traits {
+    };
+
+/*********************************************************************************************
+* FUNCTION Resource Types
+**********************************************************************************************/
+
 
     template<typename R, size_t N, typename CompList, typename Res, typename... Args>
     struct sys_function_traits<Res, N, CompList, R(*)(std::tuple<Res *, Args...> &)> {

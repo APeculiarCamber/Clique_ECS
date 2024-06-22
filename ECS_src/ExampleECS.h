@@ -2,10 +2,10 @@
 #define EXAMPLE_H
 
 #include "ECS_Manager.h"
-
+#include <fstream>
 
 // Not mentioned in the paper: a resource object represents global state for an ECS, 
-// it is accessible to every system, and would require strict syncronization primitives in parallel ECSs
+// it is accessible to every system, and would require strict synchronization primitives in parallel ECSs
 struct ResourceObject {
 	std::ofstream out;
 };
@@ -19,7 +19,7 @@ struct B_Comp {
 	float val;
 };
 
-// System functions MUST use component pointers
+// System functions MUST use component pointers. References are possible and theoretically easy to implement, however.
 
 // System functions can use a tuple to concat components together, 
 // passing a tuple reference was faster than using multiple pointer parameters in early tests
@@ -43,8 +43,7 @@ void ExampleECS() {
 	// Next, the list of all possible component types are passed in as a template pack, wrapped in an ECS::ComponentList.
 	// Do NOT miss a single component type. This will cause severe errors, since the component type will not correctly get a unique type index.
 	ECS::Manager<ResourceObject, ECS::ComponentList<A_Comp, B_Comp>> manager;
-
-	manager.GetSharedResources()->out.open("ExampleOutFile.txt");
+	manager.GetSharedResources()->out.open("ExampleOutFile.txt"); // This is our global state, a file to write to.
 
 	// Groups are created using template packs wrapped in GContains and GNotContains structs, which define their component expression/signature.
 	manager.MakeGroup<GContains<A_Comp, B_Comp>, GNotContains<>>();
@@ -55,7 +54,7 @@ void ExampleECS() {
 	B_Comp b{ 1 };
 	EntityMeta ent = manager.AddEntity(&a, &b);
 
-	// Systems should be added AFTER all groups. Order does not matter between entities and systems however.
+	// Systems should be added AFTER all groups. Order does not matter between entities and systems, however.
 	// Similar to groups, the system's component signature is specified by template packs wrapped in SContains and SNotContains.
 	// Most importantly, Adding a system also requires providing a void function with one of the following signatures:
 		// void(Cs*... cmps), void(Res*, Cs*... cmps), void(std::tuple<Cs*...> cmps), void(std::tuple<Res*, Cs*...> cmps).
@@ -64,6 +63,7 @@ void ExampleECS() {
 	Base_SystemFunc* sys = manager.AddSystem<SContains<A_Comp, B_Comp>, SNotContains<>, RunAB>();
 	// AddSystem returns a virtual pointer to the created system, which can be queried for properties such as whether it has all Equivalent groups.
 	sys->AssertFullEquiv();
+
 	manager.AddSystem<SContains<>, SNotContains<>, RunA>()->AssertFullEquiv();
 	manager.AddSystem<SContains<>, SNotContains<>, RunB>()->AssertFullEquiv();
 
@@ -73,18 +73,20 @@ void ExampleECS() {
 	//  A cleanup system could also be used to specify more advanced shutdown logic than the run-timer.
 	auto cleanup_func = [](ResourceObject* res, decltype(manager)* manager) {
 		std::cout << "Current Tick: " << manager->_currentRunCount << std::endl;
-
 		res->out << std::endl; // end line for the outfile
+
+        // If we wanted to prematurely end the ECS:
+        // manager->_running = false;
 	};
 	// Add the cleanup system
 	manager.AddCleanupSystem(cleanup_func);
 
 	// The tick limit is the number of ticks which the ECS will run before stopping.
-	// If the tick limit is set to 0 then the ECS will run indefinitely, OR until a cleanup system shuts down the 
+	// If the tick limit is set to 0 then the ECS will run indefinitely, OR until a cleanup system shuts down the ECS
 	manager.SetTickLimit(100);
 
-	// This function finalizes all setup and begins running the systems. 
-	// No changes can be made after calling this function.
+	// This function finalizes all setup and begins running the systems. It is blocking for this single thread design.
+	// No changes to the system or groups can be made after calling this function (but components and entities can be).
 	manager.RunSystems();
 
 	// That's all folks...
