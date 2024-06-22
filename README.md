@@ -9,6 +9,7 @@ A report on the implementation details and decisions of Clique, as well as the n
 ## EXAMPLE
 Please see [ECS_src/ExampleECS.h](https://github.com/APeculiarCamber/Clique_ECS/blob/main/ECS_src/ExampleECS.h) for an example of using this ECS design, and descriptions of its expectations and components.
 
+
 ```cpp
 
 #define UNIFORM_RAND() (float)(std::rand()) / (float)RAND_MAX
