@@ -15,10 +15,12 @@ struct ResourceObject {
     std::clock_t lastFrame;
 };
 
+
+// Our position component
 struct Position {
 	float x, y, z;
 };
-// B component
+// Our velocity component
 struct DynamicVelocity {
 	float x, y, z;
 };
@@ -52,7 +54,7 @@ void ExampleECS() {
     const char* outFilename = "ExampleOutFile.txt";
 	// Managers first take a single template parameter which represents the 'resource' for the ECS; this can be thought of as the global state.
 	// Next, the list of all possible component types are passed in as a template pack, wrapped in an ECS::ComponentList.
-	// Do NOT miss a single component type. This will cause severe errors, since the component type will not correctly get a unique type index.
+	// Do NOT miss a single component type. This will cause classic template errors, since the component type will not correctly get a unique type index.
 	ECS::Manager<ResourceObject, ECS::ComponentList<Position, DynamicVelocity>> manager;
     auto* res = manager.GetSharedResources();
 	res->out.open(outFilename); // This is our global state, a file to write to.
