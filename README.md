@@ -105,7 +105,9 @@ void ExampleECS() {
     // void(Cs*... cmps), void(Res*, Cs*... cmps), void(std::tuple<Cs*...> cmps), void(std::tuple<Res*, Cs*...> cmps).
     // This Cs list of component types is concatenated to the specified SContains type pack for the component signature.
     // The function will be called for each entity which satisfies its signature.
-    Base_SystemFunc* sys = manager.AddSystem<SContains<Position, DynamicVelocity>, SNotContains<>, ApplyVelocity>();
+    Base_SystemFunc* sys = manager.AddSystem<SContains<Position, DynamicVelocity>, 
+                                             SNotContains<>, 
+                                             ApplyVelocity>();
     // AddSystem returns a virtual pointer to the created system,
     // which can be queried for properties such as whether it has all Equivalent groups.
     sys->AssertFullEquiv();
