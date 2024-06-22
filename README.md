@@ -8,7 +8,7 @@ A report on the implementation details and decisions of Clique, as well as the n
 
 ## EXAMPLE
 Please see [ECS_src/ExampleECS.h](https://github.com/APeculiarCamber/Clique_ECS/blob/main/ECS_src/ExampleECS.h) for an example of using this ECS design, and descriptions of its expectations and components.
-
+TODO: pending new example, the math here for the physics is convenient but wrong.
 
 ```cpp
 
