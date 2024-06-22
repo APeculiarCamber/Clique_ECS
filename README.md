@@ -22,6 +22,7 @@ struct ResourceObject {
     std::clock_t lastFrame;
 };
 
+/// *** COMPONENTS ***
 
 // Our position component
 struct Position {
@@ -31,6 +32,8 @@ struct Position {
 struct DynamicVelocity {
     float x, y, z;
 };
+
+/// ******************
 
 // System functions MUST use component pointers.
 // References are possible (they may even be faster) and are theoretically easy to implement, however.
