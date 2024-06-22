@@ -1,5 +1,9 @@
-// ECS_src.cpp : This file contains the 'main' function. Program execution begins and ends there.
-// 
+//
+// Created by idemaj on 6/22/24.
+//
+
+#ifndef CLIQUE_ECS__SCRATCHWORK_H
+#define CLIQUE_ECS__SCRATCHWORK_H
 #include <iostream>
 #include <fstream>
 #include <unordered_set>
@@ -12,6 +16,7 @@
 #include "ECS_Manager.h"
 #include "RateChangeBenchmark.h"
 
+
 using namespace std;
 
 int RunDiffOpsBenchmark(size_t numItrs, size_t numEntities, std::ofstream& out);
@@ -19,58 +24,7 @@ int RunDiffOpsBenchmark(size_t numItrs, size_t numEntities, std::ofstream& out);
 void RunPartialTestings();
 int RunTagsBasedBenchmark(size_t numItrs, size_t numEntities, std::ostream& out);
 
-#define RUN_DERIV_BENCH
 
-int main()
-{
-#ifndef RUN_DERIV_BENCH
-    ExampleECS();
-#else
-    // RunTagsBasedBenchmark(100, 100, std::cout);
-    // RunPartialTestings();
-    
-    // Add group A, B
-    // Want to add group C & B
-        // We can make a partial using C rooted, then going RIGHT with C & B
-        // This would require some adjuctments to traversal
-        // 
-        // The general would be to create a new group which uses only the groups that don't already have a group tree
-
-    // Open the file "output.txt" for writing
-    // std::ofstream outFile("change_test_output.txt");
-    std::ofstream outFile("change_test_output_supl.txt");
-
-    // Check if the file was opened successfully
-    if (!outFile.is_open()) {
-        std::cerr << "Failed to open file for writing" << std::endl;
-        return 1;
-    }
-
-    // TODO : also keep in mind: sparse array vs hash, tup vs no tup, counting install times
-
-    constexpr int shuffle = 1, sort = 2;
-    outFile << "{";
-    for (size_t numItrs : {1000})
-        for (size_t numEntities : {10000, 50000, 100000, 500000, 1000000, 5000000 })
-            for (size_t numDerivs : {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}) {
-                for (int order : {0, shuffle, sort}) {
-                    std::cout << "(ents=" << numEntities << ", derivs=" << numDerivs << ", order='" << (order == 0 ? "inplace" : (order == shuffle ? "shuffle" : "sort")) << "')" << std::endl;
-
-                    outFile << "(" << numEntities << ", " << numDerivs << ", '" << (order == 0 ? "inplace" : (order == shuffle ? "shuffle" : "sort")) << "') : ";
-                    Rate::RunChangeTimeBenchmark(numEntities, numItrs, numDerivs, true, order == shuffle, order == sort, outFile);
-                }
-            }
-    outFile << "}" << std::endl;
-    outFile.close();
-#endif
-}
-
-
-
-
-
-
-using namespace std;
 
 struct OpsRes {
     size_t res;
@@ -225,32 +179,32 @@ int RunDiffOpsBenchmark(size_t numItrs, size_t numEntities, std::ofstream& out) 
     for (size_t i = 0; i < numEntities; ++i) {
         size_t r = std::abs(std::rand()) % 7;
         switch (r) {
-        case 0:
-            Mat<2> mat2;
-            manager._componentManager.AddEntity(&mat2);
-            ptrMatVec.push_back(new Impl_MatMultiplier<2>());
-            break;
-        case 1:
-            Mat<3> mat3;
-            manager._componentManager.AddEntity(&mat3);
-            ptrMatVec.push_back(new Impl_MatMultiplier<3>());
-            break;
-        case 2:
-            Mat<4> mat4;
-            manager._componentManager.AddEntity(&mat4);
-            ptrMatVec.push_back(new Impl_MatMultiplier<4>());
-            break;
-        case 3:
-            Mat<5> mat5;
-            manager._componentManager.AddEntity(&mat5);
-            ptrMatVec.push_back(new Impl_MatMultiplier<5>());
-            break;
-        case 4:
-            Mat<6> mat6;
-            manager._componentManager.AddEntity(&mat6);
-            ptrMatVec.push_back(new Impl_MatMultiplier<6>());
-            break;
-        default: break;
+            case 0:
+                Mat<2> mat2;
+                manager._componentManager.AddEntity(&mat2);
+                ptrMatVec.push_back(new Impl_MatMultiplier<2>());
+                break;
+            case 1:
+                Mat<3> mat3;
+                manager._componentManager.AddEntity(&mat3);
+                ptrMatVec.push_back(new Impl_MatMultiplier<3>());
+                break;
+            case 2:
+                Mat<4> mat4;
+                manager._componentManager.AddEntity(&mat4);
+                ptrMatVec.push_back(new Impl_MatMultiplier<4>());
+                break;
+            case 3:
+                Mat<5> mat5;
+                manager._componentManager.AddEntity(&mat5);
+                ptrMatVec.push_back(new Impl_MatMultiplier<5>());
+                break;
+            case 4:
+                Mat<6> mat6;
+                manager._componentManager.AddEntity(&mat6);
+                ptrMatVec.push_back(new Impl_MatMultiplier<6>());
+                break;
+            default: break;
         }
     }
     clock_t commitStart = std::clock();
@@ -632,3 +586,6 @@ int GridBenchmarkOrSomething() {
     */
 }
 #endif
+
+
+#endif //CLIQUE_ECS__SCRATCHWORK_H

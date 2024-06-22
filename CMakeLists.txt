@@ -5,4 +5,4 @@ set(CMAKE_CXX_STANDARD 23)
 
 include_directories(ECS_src)
 
-add_executable(Clique_ECS ECS_src/ECS_AutoGrouper.cpp)
+add_executable(Clique_ECS ECS_src/ECS_main.cpp)

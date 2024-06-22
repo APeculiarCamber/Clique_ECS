@@ -23,8 +23,11 @@ namespace ECS {
         std::vector<unique_ptr<Base_SystemFunc>> _systems;
         Res _sharedResources{};
         bool _running = false, _groupsCommited = false;
+    protected:
         size_t _runLimit = 0, _currentRunCount = 0;
-
+    public:
+        size_t GetRunLimit() { return _runLimit; }
+        size_t GetCurrentRunCount() { return _currentRunCount; }
         Res* GetSharedResources() { return &_sharedResources; }
 
         template<class SContains, class SNotContains, auto SystemFunction>
