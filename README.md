@@ -11,16 +11,12 @@ Please see [ECS_src/ExampleECS.h](https://github.com/APeculiarCamber/Clique_ECS/
 
 ```cpp
 
-#include "ECS_Manager.h"
-#include <fstream>
-#include <filesystem>
-
 #define UNIFORM_RAND() (float)(std::rand()) / (float)RAND_MAX
 
 // Not mentioned in the paper: a resource object represents global state for an ECS.
-// It is accessible to every system (that wants it), and would require strict synchronization primitives in parallel ECSs.
+// It's accessible to every system (that wants it), and would require strict synchronization primitives in parallel ECSs
 struct ResourceObject {
-	std::ofstream out;
+    std::ofstream out;
     float deltaTime;
     std::clock_t lastFrame;
 };
@@ -28,11 +24,11 @@ struct ResourceObject {
 
 // Our position component
 struct Position {
-	float x, y, z;
+    float x, y, z;
 };
 // Our velocity component
 struct DynamicVelocity {
-	float x, y, z;
+    float x, y, z;
 };
 
 // System functions MUST use component pointers.
@@ -41,11 +37,11 @@ struct DynamicVelocity {
 
 #define GRAVITY 9.8f
 void ApplyGravity(ResourceObject* res, DynamicVelocity* vel) {
-	vel->y -= (GRAVITY * res->deltaTime);
+    vel->y -= (GRAVITY * res->deltaTime);
 }
 
 void OutputPositions(ResourceObject* res, Position* pos) {
-	res->out << "(x=" << pos->x << ",y=" << pos->y << ",z=" << pos->z << "), ";
+    res->out << "(x=" << pos->x << ",y=" << pos->y << ",z=" << pos->z << "), ";
 }
 
 // System functions can also use a tuple to concat components together.
@@ -77,21 +73,23 @@ void WrapPosition(Position* pos) {
 
 void ExampleECS() {
     const char* outFilename = "ExampleOutFile.txt";
-	// Managers first take a single template parameter which represents the 'resource' for the ECS; this can be thought of as the global state.
-	// Next, the list of all possible component types are passed in as a template pack, wrapped in an ECS::ComponentList.
-	// Do NOT miss a single component type. This will cause classic template errors, since the component type will not correctly get a unique type index.
-	ECS::Manager<ResourceObject, ECS::ComponentList<Position, DynamicVelocity>> manager;
+    // Managers first take a template parameter of the 'resource' type; this can be thought of as the global state.
+    // Next, the list of all possible component types are passed in as a template pack, wrapped ECS::ComponentList.
+    // Do NOT miss a single component type!
+    // This will cause classic template errors, since the component type will not correctly get a unique type index.
+    ECS::Manager<ResourceObject, ECS::ComponentList<Position, DynamicVelocity>> manager;
     auto* res = manager.GetSharedResources();
-	res->out.open(outFilename); // This is our global state, a file to write to.
+    res->out.open(outFilename); // This is our global state, a file to write to.
     res->lastFrame = std::clock();
     res->deltaTime = 0;
 
-	// Groups are created using template packs wrapped in GContains and GNotContains structs, which define their component expression/signature.
-    // If a system has a 'tight' group, then it will be processed completely sequentially in memory, no pointer indirection nor branches.
-	manager.MakeGroup<GContains<Position, DynamicVelocity>, GNotContains<>>();
+    // Groups are created using template packs wrapped in GContains and GNotContains structs,
+    // which define their component expression/signature.
+    // If a system has a 'tight' group, then it will be processed sequentially in memory, no indirection nor branches.
+    manager.MakeGroup<GContains<Position, DynamicVelocity>, GNotContains<>>();
 
-	// Entities should be added AFTER all groups.
-	// We create groups by providing a parameter list of pointers for each component the entity will have initially.
+    // Entities should be added AFTER all groups.
+    // We create groups by providing a parameter list of pointers for each component the entity will have initially.
     size_t numEntities = 100;
     for (int i = 0; i < numEntities; i++) {
         Position pos{ UNIFORM_RAND() * 10, UNIFORM_RAND() * 10, UNIFORM_RAND() * 10 };
@@ -100,28 +98,29 @@ void ExampleECS() {
         EntityMeta ent = manager.AddEntity(&pos, &vel);
     }
 
-	// Systems should be added AFTER all groups. Order does not matter between entities and systems, however.
-	// Similar to groups, the system's component signature is specified by template packs wrapped in SContains and SNotContains.
-	// Most importantly, Adding a system also requires providing a void function with one of the following signatures:
-		// void(Cs*... cmps), void(Res*, Cs*... cmps), void(std::tuple<Cs*...> cmps), void(std::tuple<Res*, Cs*...> cmps).
-		// where Cs is a list of component types, this Cs list of component types is concatenated to the specified SContains type pack for the component signature.
-	// The function will be called for each entity which satisfies its signature. 
-	Base_SystemFunc* sys = manager.AddSystem<SContains<Position, DynamicVelocity>, SNotContains<>, ApplyVelocity>();
-	// AddSystem returns a virtual pointer to the created system, which can be queried for properties such as whether it has all Equivalent groups.
-	sys->AssertFullEquiv();
+    // Systems should be added AFTER all groups. Order does not matter between entities and systems, however.
+    // Similar to groups, the system's component signature is specified by template packs (SContains and SNotContains).
+    // Most importantly, Adding a system also requires providing a void function with one of the following signatures:
+    // void(Cs*... cmps), void(Res*, Cs*... cmps), void(std::tuple<Cs*...> cmps), void(std::tuple<Res*, Cs*...> cmps).
+    // This Cs list of component types is concatenated to the specified SContains type pack for the component signature.
+    // The function will be called for each entity which satisfies its signature.
+    Base_SystemFunc* sys = manager.AddSystem<SContains<Position, DynamicVelocity>, SNotContains<>, ApplyVelocity>();
+    // AddSystem returns a virtual pointer to the created system,
+    // which can be queried for properties such as whether it has all Equivalent groups.
+    sys->AssertFullEquiv();
 
     // The arguments of the provided function to an AddSystem call will be implicitly included in SContains.
     // But it's usually good to include them anyway for clarity.
-	manager.AddSystem<SContains<>, SNotContains<>, ApplyGravity>()->AssertFullEquiv();
-	manager.AddSystem<SContains<>, SNotContains<>, OutputPositions>()->AssertFullEquiv();
+    manager.AddSystem<SContains<>, SNotContains<>, ApplyGravity>()->AssertFullEquiv();
+    manager.AddSystem<SContains<>, SNotContains<>, OutputPositions>()->AssertFullEquiv();
 
-	// Cleanup functions are called at the end of each tick, just before committing entity changes (and after ALL run systems).
-	//  It is likely best to specify them as lambda function, while systems are given as template function pointers.
-	//  This is a VERY simple cleanup function which simply prints the number of iterations left and updates a delta time.
-	auto cleanup_func = [](ResourceObject* res, decltype(manager)* manager) {
+    // Cleanup functions are called at the end of each tick, before committing entity changes (after ALL run systems).
+    //  It is likely best to specify them as lambda function, while systems are given as template function pointers.
+    //  This is a simple cleanup function which simply prints the number of iterations left and updates a delta time.
+    auto cleanup_func = [](ResourceObject* res, decltype(manager)* manager) {
         // We can write results:
-		std::cout << "\nTick #" << manager->GetCurrentRunCount() << ":" << std::endl;
-		res->out << std::endl; // end line for the outfile
+        std::cout << "\nTick #" << manager->GetCurrentRunCount() << ":" << std::endl;
+        res->out << std::endl; // end line for the outfile
         // Or manage global state:
         std::clock_t endOfFrame = std::clock();
         res->deltaTime = (float)(endOfFrame - res->lastFrame) / (float)CLOCKS_PER_SEC;
@@ -129,19 +128,20 @@ void ExampleECS() {
         // Or prematurely end the ECS:
         // manager->_running = false;
     };
-	// Add the cleanup system. Unlike systems, 'cleanup' signature is fixed and doesn't need to be given a template parameter.
-	manager.AddCleanupSystem(cleanup_func);
+    // Unlike systems, 'cleanup' system signatures are fixed and doesn't need to be given a template parameter.
+    // void(ResourceObject* res, decltype(manager)* manager)
+    manager.AddCleanupSystem(cleanup_func);
 
-	// The tick limit is the number of ticks which the ECS will run before stopping.
-	// If the tick limit is set to 0 then the ECS will run indefinitely, OR until a cleanup system shuts down the ECS
-	manager.SetTickLimit(100);
+    // The tick limit is the number of ticks which the ECS will run before stopping.
+    // If the tick limit is set to 0 then the ECS will run indefinitely, OR until a cleanup system shuts down the ECS
+    manager.SetTickLimit(100);
 
-	// This function finalizes all setup and begins running the systems. It is blocking for this single thread design.
-	// No changes to the system or groups can be made after calling this function (but components and entities can be).
-	manager.RunSystems();
+    // This function finalizes all setup and begins running the systems. It is blocking for this single thread design.
+    // No changes to the system or groups can be made after calling this function (but components and entities can be).
+    manager.RunSystems();
 
-	// That's all folks...
-	manager.GetSharedResources()->out.close();
+    // That's all folks...
+    manager.GetSharedResources()->out.close();
 
     std::cout << "Wrote output file to " << std::filesystem::current_path() / outFilename << std::endl;
 }
