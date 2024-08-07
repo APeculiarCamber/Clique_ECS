@@ -38,7 +38,7 @@ public:
 
     const std::array<size_t, N>& GetComponentsGroupShares() {  return _componentsSharedWithGroup;  }
     /*
-    *  TODO: NOT USED CURRENTLY!
+    *  NOTE: NOT USED CURRENTLY!
     *  Return true if all the entities within this node group would be included
     */
     // bool IsContainedByExpr(BoolExprBitVector<N>& bitRep);
@@ -137,6 +137,7 @@ public:
 template <typename Comp, size_t N, bool IsTag = std::is_empty_v<Comp>>
 class ComponentArray : public Base_ComponentArray<N>
 {
+protected:
     size_t componentIndex;
 public:
     explicit ComponentArray(size_t t) : componentIndex(t) {}
@@ -163,7 +164,11 @@ public:
     size_t RegisterNewComponent(Comp* comp) { return -1; }
 };
 
-
+/**
+ * A DATA storage class. Adding and removing components from this array is NOT TRIVIAL!
+ * @tparam Comp The component type, filled with something
+ * @tparam N The number of total components in the ECS divided by the bit size of size_t
+ */
 template <typename Comp, size_t N>
 class  ComponentArray<Comp, N, false>: public Base_ComponentArray<N> {
 public:
@@ -186,8 +191,6 @@ public:
     ComponentGroupNode<Comp, N>* GetBestGroup(BoolExprBitVector<N>& expr);
     ComponentGroupNode<Comp, N>* GetBestGroup(std::array<size_t, N>& expr);
 
-
-    // TODO : fix, then fix SContains and traversal for systems and entities
     ComponentGroupNode<Comp, N>* AppendToNode(ComponentGroupNode<Comp, N>* myNode, BoolExprNode<N>* repNode, std::string s, bool isLeft);
 
 

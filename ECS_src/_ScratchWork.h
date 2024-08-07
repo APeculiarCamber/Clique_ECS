@@ -420,10 +420,6 @@ struct TestSharedResources {
 int GridBenchmarkOrSomething() {
     // Create an unordered_map of void* pointers to Abs objects with keys based on the argument types of `foo`
 
-    // BIGGEST TODOs:
-        // - make sure ALL works, big task
-        // mark groups with the components they acceptably allow to iterate over
-
     ECS::Manager<TestSharedResources, ECS::ComponentList<Position, Velocity, Acceleration, Jerk, SafeJerk> > manager;
     auto res = manager.GetSharedResources();
     res->minx = res->miny = res->minz = 0;
@@ -432,9 +428,6 @@ int GridBenchmarkOrSomething() {
     res->bounces = 0;
     res->deltaTime = 0;
 
-
-    // TODO : the system you have now will collapse on this, but you should think about if it actually NEEDS to...
-        // I mean obviously we can fix this with system MUST HAVEs
     manager._componentManager.AddGroup<GContains<Position, Velocity>, GNotContains<>>();
     manager._componentManager.AddGroup<GContains<Position, Velocity, Acceleration>, GNotContains<>>();
     manager._componentManager.AddGroup<GContains<Position, Velocity, Acceleration, Jerk>, GNotContains<>>();

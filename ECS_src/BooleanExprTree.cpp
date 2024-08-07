@@ -176,11 +176,10 @@ char BoolExprTree<ArrN>::AddImplicit(BoolExprBitVector<ArrN> &a) {
         newNode = m_root->AddExprImplicit(a);
     }
 
-    // TODO : this should theoretically not be needed
     m_explicitAffectedComponents.clear();
     m_root->PropogateExplicitComponents(m_explicitAffectedComponents);
     PRINT("For this add, the tree has affected components: ");
-    for (auto a : m_explicitAffectedComponents) PRINT(a << ", ");
+    for (auto affectedComp : m_explicitAffectedComponents) PRINT(affectedComp << ", ");
     PRINT(std::endl);
 
     if (newNode == nullptr) return FAILURE_ADD;
