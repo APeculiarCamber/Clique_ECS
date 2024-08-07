@@ -11,13 +11,16 @@
 
 template <size_t ArrN>
 class BoolExprTreeManager {
-public: // TODO: see about scope lowering, TODO : make sure that this unique_ptr doesn't mess up everything
-    vector<unique_ptr<BoolExprTree<ArrN>>> _exprTrees;
-    std::array<size_t, ArrN> _tags;
+protected:
+    vector<unique_ptr<BoolExprTree<ArrN>>> m_exprTrees;
+    std::array<size_t, ArrN> m_tags;
 
+public:
     BoolExprTreeManager() = default;
-    explicit BoolExprTreeManager(std::array<size_t, ArrN>& tags) : _tags(tags) { }
+    explicit BoolExprTreeManager(std::array<size_t, ArrN>& tags) : m_tags(tags) { }
 
+    const vector<unique_ptr<BoolExprTree<ArrN>>>& GetExpressionTrees() const { return m_exprTrees; }
+    const std::array<size_t, ArrN>& GetTagBits() const { return m_tags; }
     /*
     * Add a new group to as many boolean trees as can take it.
     * Distinctions are made appropriately for when orderings are BROKEN. HOPEFULLY!!!!!!

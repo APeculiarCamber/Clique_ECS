@@ -29,7 +29,7 @@ public:
     explicit BoolExprNode(BoolExprNode<ArrN>* parent) : _parent(parent), _explicitRep(false), _hasBitRep(false), _bitRep{} {}
     BoolExprNode(BoolExprNode<ArrN>* parent, BoolExprBitVector<ArrN>& bitRep, bool explRep=true)
         : _parent(parent), _explicitRep(parent == nullptr || (parent->_explicitRep) && explRep),
-       _bitRep{ ._mustHave = bitRep._mustHave, ._CaresAbout = bitRep._CaresAbout }, _hasBitRep(true) {}
+          _bitRep{ .mustHave = bitRep.mustHave, .caresAbout = bitRep.caresAbout }, _hasBitRep(true) {}
 
     /**
     * Collect all the component types which are included as ONs in the far left side EXPLICIT nodes
@@ -47,7 +47,7 @@ public:
     bool ContainsExpr_AssumeParent(BoolExprBitVector<ArrN>& bitRep);
 
     /**
-    *   TODO : currently only adds to leaves, which is manageable but NOT ideal
+    *   NOTE : currently only adds to leaves, which is manageable but NOT ideal
     *   Assumes TREE will handle a re-root, so it DOES NOT
     *	The main assumption this allows is parent has already done ContainedBy checks on its kids
     */
@@ -62,36 +62,33 @@ public:
     */
     BoolExprNode<ArrN>* AddExprImplicit(BoolExprBitVector<ArrN>& bitRep, bool onFarLeft = true);
 
-
-    /**
-    * TODO: these functions do not currently support IsContained by, since AddExpr also doesn't yet
-    */
+    // Returns true if the boolean expression can be added somewhere with this as an ancestor
     bool CanAdd(BoolExprBitVector<ArrN>& bitRep);
-
+    // Returns true if the boolean expression can be added explicitly (meaning directly and without modification)
     bool CanBeAddedAsExplicit(BoolExprBitVector<ArrN>& bitRep);
 };
 
 template <size_t ArrN>
 class BoolExprTree {
+protected:
+    unordered_set<size_t> m_explicitAffectedComponents;
+    unique_ptr<BoolExprNode<ArrN>> m_root = nullptr;
+
 public:
-    // list of explicit components
-    // root
-    unordered_set<size_t> _explicitAffectedComponents;
-    unique_ptr<BoolExprNode<ArrN>> _root = nullptr;
+    const unordered_set<size_t>& GetExplicitlyAffectedComponents() const { return m_explicitAffectedComponents; }
+    BoolExprNode<ArrN>* GetRoot() const { return m_root.get(); }
 
     bool CouldBeAdded(BoolExprBitVector<ArrN>& a);
 
-    // bool WillBeAddedAsExplicit(BoolExprBitVector<ArrN>& a);
-
     bool hasAsExplicitComponent(size_t comp) {
-        return _explicitAffectedComponents.find(comp) != _explicitAffectedComponents.end();
+        return m_explicitAffectedComponents.find(comp) != m_explicitAffectedComponents.end();
     }
 
     char Add(BoolExprBitVector<ArrN>& a, const std::array<size_t, ArrN>& tags = {});
-
     char AddImplicit(BoolExprBitVector<ArrN>& a);
 };
 
+// Funny trick to get template definitions in my "translation" files
 #include "BooleanExprTree.cpp"
 
 #endif

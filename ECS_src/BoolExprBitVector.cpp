@@ -6,7 +6,7 @@
 
 template<size_t N>
 BoolExprBitVector<N> MakeFromSpecVec(const vector<size_t> &has, const vector<size_t> &notHas) {
-    BoolExprBitVector<N> outVec {._mustHave{}, ._CaresAbout{}};
+    BoolExprBitVector<N> outVec {.mustHave{}, .caresAbout{}};
 
 
     // Add the NEEDS/HAS
@@ -15,9 +15,9 @@ BoolExprBitVector<N> MakeFromSpecVec(const vector<size_t> &has, const vector<siz
         size_t shift = (h - (block * (sizeof(size_t) * CHAR_BIT)));
         size_t bit = (size_t)1 << shift;
 
-        // bool alreadyNoted = (outVec._CaresAbout.at(block) & bit) != 0;
-        outVec._CaresAbout.at(block) |= bit;
-        outVec._mustHave.at(block) |= bit; // add the bit
+        // bool alreadyNoted = (outVec.caresAbout.at(block) & bit) != 0;
+        outVec.caresAbout.at(block) |= bit;
+        outVec.mustHave.at(block) |= bit; // add the bit
     }
 
     // Add the NEEDS NOT/HAS NOT
@@ -26,9 +26,9 @@ BoolExprBitVector<N> MakeFromSpecVec(const vector<size_t> &has, const vector<siz
         size_t shift = (h - (block * (sizeof(size_t) * CHAR_BIT)));
         size_t bit = (size_t)1 << shift;
 
-        // bool alreadyNoted = (outVec._CaresAbout.at(block) & bit) != 0;
-        outVec._CaresAbout.at(block) |= bit;
-        outVec._mustHave.at(block) &= ~bit; // remove the bit
+        // bool alreadyNoted = (outVec.caresAbout.at(block) & bit) != 0;
+        outVec.caresAbout.at(block) |= bit;
+        outVec.mustHave.at(block) &= ~bit; // remove the bit
     }
 
     return outVec;
@@ -38,13 +38,13 @@ template<typename HTuple, typename NHTuple, size_t N>
 BoolExprBitVector<N> MakeFromTupleSpec(const HTuple &has, const NHTuple &notHas) {
     BoolExprBitVector<N> expr{};
     std::apply([&](auto... h) {
-        ((expr._CaresAbout.at(h / (sizeof(size_t) * CHAR_BIT)) |= ((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...);
-        ((expr._mustHave.at(h / (sizeof(size_t) * CHAR_BIT)) |= ((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...);
+        ((expr.caresAbout.at(h / (sizeof(size_t) * CHAR_BIT)) |= ((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...);
+        ((expr.mustHave.at(h / (sizeof(size_t) * CHAR_BIT)) |= ((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...);
     }, has);
 
     std::apply([&](auto... h) {
-        ((expr._CaresAbout.at(h / (sizeof(size_t) * CHAR_BIT)) |= ((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...);
-        // ((expr._mustHave.at(h / (sizeof(size_t) * CHAR_BIT)) &= ~((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...); // Unnecessary
+        ((expr.caresAbout.at(h / (sizeof(size_t) * CHAR_BIT)) |= ((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...);
+        // ((expr.mustHave.at(h / (sizeof(size_t) * CHAR_BIT)) &= ~((size_t)1 << (h % (sizeof(size_t) * CHAR_BIT)))), ...); // Unnecessary
     }, notHas);
 
     PRINT("Made this expr with TupleSpec:   ");
@@ -77,11 +77,11 @@ bool BitImplies(const BoolExprBitVector<N> &a, const BoolExprBitVector<N> &b) {
     bool implies = true;
     for (size_t n = 0; n < N; n++) {
         // bit vec with same bits as a when a cares, and OPPOSITE as b when a doesn't care
-        size_t adversary_a = (a._mustHave.at(n) & a._CaresAbout.at(n)) | (~b._mustHave.at(n) & ~a._CaresAbout.at(n));
+        size_t adversary_a = (a.mustHave.at(n) & a.caresAbout.at(n)) | (~b.mustHave.at(n) & ~a.caresAbout.at(n));
         // not(xor) : bitwise equals
-        size_t matches = ~(adversary_a ^ b._mustHave.at(n));
+        size_t matches = ~(adversary_a ^ b.mustHave.at(n));
         // if b does not care, set it to an automatic match
-        matches |= ~b._CaresAbout.at(n);
+        matches |= ~b.caresAbout.at(n);
         // All elements need to 'match'
         implies &= ((~matches) == 0);
     }
@@ -97,9 +97,9 @@ bool BitImpliesNot(const BoolExprBitVector<N> &a, const BoolExprBitVector<N> &b)
     bool impliesNot = false;
     for (size_t n = 0; n < N; n++) {
         // Care vector
-        size_t cares = a._CaresAbout.at(n) & b._CaresAbout.at(n);
+        size_t cares = a.caresAbout.at(n) & b.caresAbout.at(n);
         // 1 if bits NOT equal
-        size_t matches = a._mustHave.at(n) ^ b._mustHave.at(n);
+        size_t matches = a.mustHave.at(n) ^ b.mustHave.at(n);
         // only accept 1s from cared about regions
         matches &= cares;
         // Only 1 element needs to have a 1
@@ -122,11 +122,11 @@ bool BitImplies(const array<size_t, N> &a, const BoolExprBitVector<N> &b) {
     bool implies = true;
     for (size_t n = 0; n < N; n++) {
         // bit vec with same bits as a when a cares, and OPPOSITE as b when a doesn't care
-        size_t adversary_a = (a.at(n)) /* | (~b._mustHave.at(n) & ~a._CaresAbout.at(n)) */;
+        size_t adversary_a = (a.at(n)) /* | (~b.mustHave.at(n) & ~a.caresAbout.at(n)) */;
         // not(xor) : bitwise equals
-        size_t matches = ~(adversary_a ^ b._mustHave.at(n));
+        size_t matches = ~(adversary_a ^ b.mustHave.at(n));
         // if b does not care, set it to an automatic match
-        matches |= ~b._CaresAbout.at(n);
+        matches |= ~b.caresAbout.at(n);
         // All elements need to 'match'
         implies &= ((~matches) == 0);
     }
@@ -147,16 +147,6 @@ void DEBUG_Print_Boolean_Expr(const BoolExprBitVector<N> &a) {
 
 
 template<size_t N>
-void FORCE_DEBUG_Print_Boolean_Expr(const BoolExprBitVector<N> &a) {
-    std::unordered_set<size_t> has, hasNot;
-    GetHasAndHasNotBits(a, has, hasNot);
-    std::cout << "Expr: {has: (";
-    for (auto h : has) std::cout << h << ",";
-    std::cout << " ), hasnot: (";
-    for (auto h : hasNot) std::cout << h << ",";
-    std::cout << ") }" << std::endl;
-}
-template<size_t N>
 bool BitImpliesNot(const array<size_t, N> &a, const BoolExprBitVector<N> &b) {
     // a implies ~b when,
     // a.has is 1 and CARES for ANY b.has 0 and CARES
@@ -164,9 +154,9 @@ bool BitImpliesNot(const array<size_t, N> &a, const BoolExprBitVector<N> &b) {
     bool impliesNot = false;
     for (size_t n = 0; n < N; n++) {
         // Care vector
-        size_t cares = b._CaresAbout.at(n);
+        size_t cares = b.caresAbout.at(n);
         // 1 if bits NOT equal
-        size_t matches = a.at(n) ^ b._mustHave.at(n);
+        size_t matches = a.at(n) ^ b.mustHave.at(n);
         // only accept 1s from cared about regions
         matches &= cares;
         // Only 1 element needs to have a 1
@@ -177,7 +167,7 @@ bool BitImpliesNot(const array<size_t, N> &a, const BoolExprBitVector<N> &b) {
 template<size_t N>
 void GetHasBits(const BoolExprBitVector<N> &a, unordered_set<size_t> &outSet) {
     for (size_t n = 0; n < N; n++) {
-        size_t has = a._CaresAbout.at(n) & a._mustHave.at(n);
+        size_t has = a.caresAbout.at(n) & a.mustHave.at(n);
         size_t currentShift = 0;
         while (has != 0) {
             if ((has & 1) != 0) outSet.insert(currentShift + (n * (sizeof(size_t) * CHAR_BIT)));
@@ -191,8 +181,8 @@ void GetHasBits(const BoolExprBitVector<N> &a, unordered_set<size_t> &outSet) {
 template<size_t N>
 void GetHasAndHasNotBits(const BoolExprBitVector<N> &a, unordered_set<size_t> &hasSet, unordered_set<size_t> &hasNotSet) {
     for (size_t n = 0; n < N; n++) {
-        size_t cares = a._CaresAbout.at(n);
-        size_t has = a._mustHave.at(n);
+        size_t cares = a.caresAbout.at(n);
+        size_t has = a.mustHave.at(n);
         size_t currentShift = 0;
         while (cares != 0) {
             if ((cares & 1) != 0) {
@@ -207,22 +197,6 @@ void GetHasAndHasNotBits(const BoolExprBitVector<N> &a, unordered_set<size_t> &h
         }
     }
 }
-
-template<size_t N>
-void GetHasBits(const array<size_t, N> &a, unordered_set<size_t> &hasSet) {
-    for (size_t n = 0; n < N; n++) {
-        size_t has = a.at(n);
-        size_t currentShift = 0;
-        while (has != 0) {
-            if ((has & 1) != 0)
-                hasSet.insert(currentShift + (n * (sizeof(size_t) * CHAR_BIT)));
-
-            has = has >> 1;
-            currentShift += 1;
-        }
-    }
-}
-
 
 template<size_t N>
 std::array<size_t, N> operator|(const array<size_t, N> &arr1, const array<size_t, N> &arr2) {

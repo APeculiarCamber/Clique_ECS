@@ -124,7 +124,7 @@ void BoolExprNode<ArrN>::PropogateExplicitComponents(unordered_set<size_t> &expl
     if (!_explicitRep) return;
     if (_hasBitRep) {
         BoolExprBitVector<ArrN> explComps = _bitRep;
-        for (size_t i = 0; i < ArrN; ++i) explComps._mustHave.at(i) &= ~tags.at(i);
+        for (size_t i = 0; i < ArrN; ++i) explComps.mustHave.at(i) &= ~tags.at(i);
         GetHasBits(explComps, explicitComponents);
         PRINT(_hasBitRep << std::endl);
     }
@@ -140,20 +140,20 @@ template<size_t ArrN>
 char BoolExprTree<ArrN>::Add(BoolExprBitVector<ArrN> &a, const array<size_t, ArrN> &tags) {
     BoolExprNode<ArrN>* newNode = nullptr;
 
-    if (_root == nullptr) {
+    if (m_root == nullptr) {
         PRINT("    Adding at root" << std::endl);
-        _root.reset(new BoolExprNode<ArrN>(nullptr, a));
-        newNode = _root.get();
+        m_root.reset(new BoolExprNode<ArrN>(nullptr, a));
+        newNode = m_root.get();
     }
     else {
         PRINT("    Adding to tree" << std::endl);
-        newNode = _root->AddExpr(a);
+        newNode = m_root->AddExpr(a);
     }
 
-    _explicitAffectedComponents.clear();
-    _root->PropogateExplicitComponents(_explicitAffectedComponents, tags);
+    m_explicitAffectedComponents.clear();
+    m_root->PropogateExplicitComponents(m_explicitAffectedComponents, tags);
     PRINT("For this add, the tree has affected components: ");
-    for (auto a : _explicitAffectedComponents) PRINT(a << ", ");
+    for (auto a : m_explicitAffectedComponents) PRINT(a << ", ");
     PRINT(std::endl);
 
     if (newNode == nullptr) return FAILURE_ADD;
@@ -165,22 +165,22 @@ template<size_t ArrN>
 char BoolExprTree<ArrN>::AddImplicit(BoolExprBitVector<ArrN> &a) {
     BoolExprNode<ArrN>* newNode = nullptr;
 
-    if (_root == nullptr) {
+    if (m_root == nullptr) {
         assert(0 == "This is absolutely not OK: we cannot add implicitly add the root");
         PRINT("    Adding at root" << std::endl);
-        _root.reset(new BoolExprNode<ArrN>(nullptr, a));
-        newNode = _root.get();
+        m_root.reset(new BoolExprNode<ArrN>(nullptr, a));
+        newNode = m_root.get();
     }
     else {
         PRINT("    Adding to tree IMPLICITLY" << std::endl);
-        newNode = _root->AddExprImplicit(a);
+        newNode = m_root->AddExprImplicit(a);
     }
 
     // TODO : this should theoretically not be needed
-    _explicitAffectedComponents.clear();
-    _root->PropogateExplicitComponents(_explicitAffectedComponents);
+    m_explicitAffectedComponents.clear();
+    m_root->PropogateExplicitComponents(m_explicitAffectedComponents);
     PRINT("For this add, the tree has affected components: ");
-    for (auto a : _explicitAffectedComponents) PRINT(a << ", ");
+    for (auto a : m_explicitAffectedComponents) PRINT(a << ", ");
     PRINT(std::endl);
 
     if (newNode == nullptr) return FAILURE_ADD;
@@ -189,9 +189,9 @@ char BoolExprTree<ArrN>::AddImplicit(BoolExprBitVector<ArrN> &a) {
 
 template<size_t ArrN>
 bool BoolExprTree<ArrN>::CouldBeAdded(BoolExprBitVector<ArrN> &a) {
-    if (_root == nullptr) return true;
+    if (m_root == nullptr) return true;
     // Check if this could become a new root
-    // if (_root->IsContainedByExpr(a)) return true;
+    // if (m_root->IsContainedByExpr(a)) return true;
     // Check if it can be added
-    return _root->CanAdd(a);
+    return m_root->CanAdd(a);
 }

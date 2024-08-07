@@ -112,7 +112,7 @@ ComponentGroupNode<C, N>::ComponentGroupNode(BoolExprBitVector<N> &rep, bool has
     _numSharedComponents = 0;
 
     for (size_t n = 0; n < N; ++n) {
-        _componentsSharedWithGroup.at(n) = sharedGroups._CaresAbout.at(n) & sharedGroups._mustHave.at(n);
+        _componentsSharedWithGroup.at(n) = sharedGroups.caresAbout.at(n) & sharedGroups.mustHave.at(n);
 
         std::bitset<sizeof(std::size_t) * CHAR_BIT> bits(_componentsSharedWithGroup.at(n));
         _numSharedComponents += bits.count();
@@ -278,7 +278,7 @@ ComponentArray<Comp, N, false>::AppendToNode(ComponentGroupNode<Comp, N> *myNode
     if (repNode == nullptr) return nullptr;
 
     myNode->s = "~" + s + "~";
-    PRINT("    Got for: " << myNode->_hasBitRep << ": " << (myNode->_bitRep._mustHave.at(0) & myNode->_bitRep._CaresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
+    PRINT("    Got for: " << myNode->_hasBitRep << ": " << (myNode->_bitRep.mustHave.at(0) & myNode->_bitRep.caresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
     if (repNode->_left) {
         // If isLeft, we should use the new bit rep for shared groups in components, but if not left, we should use our parents
         myNode->_left.reset(new ComponentGroupNode<Comp, N>(
@@ -297,7 +297,7 @@ ComponentArray<Comp, N, false>::AppendToNode(ComponentGroupNode<Comp, N> *myNode
 
     if (!repNode->_left && !repNode->_right) {
         assert(repNode->_parent == nullptr || (repNode->_parent->_left != nullptr && repNode->_parent->_right != nullptr));
-        PRINT("    Leaf for: " << myNode->_hasBitRep << ": " << (myNode->_bitRep._mustHave.at(0) & myNode->_bitRep._CaresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
+        PRINT("    Leaf for: " << myNode->_hasBitRep << ": " << (myNode->_bitRep.mustHave.at(0) & myNode->_bitRep.caresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
     }
     return myNode;
 }

@@ -3,24 +3,23 @@
 #include "CoreComponentManagerImpl.h"
 
 template<typename... Cs>
-CoreComponentManager<Cs...>::CoreComponentManager() : _entities(DEFAULT_ENT_SIZE), _modIndices(DEFAULT_ENT_SIZE)  {
+CoreComponentManager<Cs...>::CoreComponentManager() : m_entities(DEFAULT_ENT_SIZE), m_modIndices(DEFAULT_ENT_SIZE)  {
 
     // CREATE THE COMPONENT ARRAYS
     ((_componentArrs[getTypeIndex<Cs>()].reset(static_cast<Base_ComponentArray<N>*>(new ComponentArray<Cs, N>(getTypeIndex<Cs>())))), ...);
 
     // Write the entity free list
-    _entityFreeHead = 0;
+    m_entityFreeHead = 0;
     for (size_t i = 0; i < DEFAULT_ENT_SIZE; ++i) {
-        _entities[i]._next = i + 1;
-        _modIndices[i] = std::numeric_limits<size_t>::max();
+        m_entities[i]._next = i + 1;
+        m_modIndices[i] = std::numeric_limits<size_t>::max();
     }
 
     // And the tags
-    ((_tags.at(getTypeIndex<Cs>() / (sizeof(size_t) * CHAR_BIT))
+    ((m_tags.at(getTypeIndex<Cs>() / (sizeof(size_t) * CHAR_BIT))
               |= (std::is_empty_v<Cs> ? (size_t)1 : (size_t)0) << (getTypeIndex<Cs>() % (sizeof(size_t) * CHAR_BIT))), ...);
 
-    // TODO: don't remember this
-    _groupManager = BoolExprTreeManager<N>(_tags);
+    m_groupManager = BoolExprTreeManager<N>(m_tags);
 }
 
 template<typename... Cs>
@@ -38,29 +37,29 @@ void CoreComponentManager<Cs...>::AddComponentBitVectorByTypes(array<size_t, N> 
 template<typename... Cs>
 template<typename... As>
 bool CoreComponentManager<Cs...>::AddComponents(EntityMeta meta, As *... cmps) {
-    if (_entities[meta.Handle]._metaData.UniqueID != meta.UniqueID) return false;
+    if (m_entities[meta.Handle]._metaData.UniqueID != meta.UniqueID) return false;
     PRINT("ATTEMPTING ADD FOR: " << meta.Handle << std::endl);
 
     // Get the mod index
     size_t modInd;
-    if (_modIndices[meta.Handle] != std::numeric_limits<size_t>::max()) {
+    if (m_modIndices[meta.Handle] != std::numeric_limits<size_t>::max()) {
         PRINT("    ALREADY HAS A MOD RECORD!" << std::endl);
-        modInd = _modIndices[meta.Handle];
+        modInd = m_modIndices[meta.Handle];
     }
     else {
-        modInd = _NEWAndADD_Components.size();
-        _NEWAndADD_Components.emplace_back();
-        _NEWAndADD_Components.back()._new = _entities[meta.Handle]._components;
+        modInd = m_CompModCommands.size();
+        m_CompModCommands.emplace_back();
+        m_CompModCommands.back()._new = m_entities[meta.Handle]._components;
     }
-    _modIndices[meta.Handle] = modInd;
+    m_modIndices[meta.Handle] = modInd;
 
     // In the current scheme, if you try to add a component that it already has, that component will be overwritten, which is FINE?
     // Set the new bits for the component bit vector
-    AddComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._new);
-    AddComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._add);
+    AddComponentBitVectorByTypes<As...>(&m_CompModCommands[modInd]._new);
+    AddComponentBitVectorByTypes<As...>(&m_CompModCommands[modInd]._add);
     // Add all components to the component array
-    (_NEWAndADD_Components[modInd]._addCompInds.insert_or_assign(getTypeIndex<As>(),
-                                                                 static_cast<ComponentArray<As, N>*>(_componentArrs[getTypeIndex<As>()].get())->RegisterNewComponent(cmps)), ...);
+    (m_CompModCommands[modInd]._addCompInds.insert_or_assign(getTypeIndex<As>(),
+                                                             static_cast<ComponentArray<As, N>*>(_componentArrs[getTypeIndex<As>()].get())->RegisterNewComponent(cmps)), ...);
 
     return true;
 }
@@ -68,63 +67,37 @@ bool CoreComponentManager<Cs...>::AddComponents(EntityMeta meta, As *... cmps) {
 template<typename... Cs>
 template<typename... As>
 bool CoreComponentManager<Cs...>::DeleteComponents(EntityMeta meta) {
-    if (_entities[meta.Handle]._metaData.UniqueID != meta.UniqueID) return false;
+    if (m_entities[meta.Handle]._metaData.UniqueID != meta.UniqueID) return false;
 
     PRINT("ATTEMPTING DELETE FOR: " << meta.Handle << std::endl);
     // Get the mod index
     size_t modInd;
-    if (_modIndices[meta.Handle] != std::numeric_limits<size_t>::max()) {
-        modInd = _modIndices[meta.Handle];
+    if (m_modIndices[meta.Handle] != std::numeric_limits<size_t>::max()) {
+        modInd = m_modIndices[meta.Handle];
     }
     else {
-        modInd = _NEWAndADD_Components.size();
-        _NEWAndADD_Components.emplace_back();
-        _NEWAndADD_Components.back()._new = _entities[meta.Handle]._components;
+        modInd = m_CompModCommands.size();
+        m_CompModCommands.emplace_back();
+        m_CompModCommands.back()._new = m_entities[meta.Handle]._components;
     }
-    _modIndices[meta.Handle] = modInd;
+    m_modIndices[meta.Handle] = modInd;
 
 
     // remove from both, in a case of an add that we are now removing
-    RemoveComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._new);
-    RemoveComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._add);
+    RemoveComponentBitVectorByTypes<As...>(&m_CompModCommands[modInd]._new);
+    RemoveComponentBitVectorByTypes<As...>(&m_CompModCommands[modInd]._add);
     return true;
 }
 
 template<typename... Cs>
-void CoreComponentManager<Cs...>::DEBUG_PRINT_RECORD(NEWandADDComponents<N> &mod) {
-    PRINT("For Entity " << mod._meta.Handle << "(" << mod._meta.UniqueID << "): " << std::endl);
-    unordered_set<size_t> has;
-    GetHasBits(_entities[mod._meta.Handle]._components, has);
-    PRINT("old: "); for (auto s : has) PRINT(s << ",");
-    PRINT(" ::: ");
-
-    has.clear();
-    GetHasBits(mod._new, has);
-    PRINT("new: ");  for (auto s : has) PRINT(s << ",");
-    PRINT(" ::: ");
-
-    has.clear();
-    GetHasBits(mod._add, has);
-    PRINT("add: ");  for (auto s : has) PRINT(s << ",");
-    PRINT(std::endl);
-
-    has.clear();
-    std::array<size_t, N> toInform = mod._new | _entities[mod._meta.Handle]._components;
-    GetHasBits(toInform, has);
-    PRINT("TOINFORMS: ");  for (auto s : has) PRINT(s << ",");
-    PRINT(std::endl);
-}
-
-template<typename... Cs>
 bool CoreComponentManager<Cs...>::CommitEntityChanges() {
-    if (_NEWAndADD_Components.size() == 0) return false;
+    if (m_CompModCommands.size() == 0) return false;
     PRINT("TRYING TO COMMIT ENTITIES" << std::endl);
 
-    for (NEWandADDComponents<N>& mod : _NEWAndADD_Components) {
-        // DEBUG_PRINT_RECORD(mod);
+    for (ComponentModCommand<N>& mod : m_CompModCommands) {
 
         // update the entity IDs
-        Entity<N>* ent = &_entities[mod._meta.Handle];
+        Entity<N>* ent = &m_entities[mod._meta.Handle];
         ent->_metaData = mod._meta;
 
         std::array<size_t, N> toInform = mod._new | ent->_components; // TODO : fix this to a function if it dont compile
@@ -168,14 +141,14 @@ bool CoreComponentManager<Cs...>::CommitEntityChanges() {
         ent->_components = mod._new;
 
         // Reset the mod index
-        _modIndices[ent->_metaData.Handle] = std::numeric_limits<size_t>::max();
+        m_modIndices[ent->_metaData.Handle] = std::numeric_limits<size_t>::max();
     }
 
-    _NEWAndADD_Components.clear();
+    m_CompModCommands.clear();
 
     bool good = true;
     for (unique_ptr<Base_ComponentArray<N>>& compArray : _componentArrs) {
-        good &= compArray->CommitComponentUpdates(_entities.size());
+        good &= compArray->CommitComponentUpdates(m_entities.size());
     }
     return true;
 }
@@ -193,8 +166,8 @@ char CoreComponentManager<Cs...>::AddGroup(bool ifPartialAddimplicitly, bool ifP
     for (auto h : hasNot)
         PRINT(", " << h);
     PRINT(std::endl);
-    _groupsCommitted = false;
-    return _groupManager.AddGroup(has, hasNot, ifPartialAddimplicitly, ifPartialMakeTree);
+    m_groupsCommitted = false;
+    return m_groupManager.AddGroup(has, hasNot, ifPartialAddimplicitly, ifPartialMakeTree);
 }
 
 
@@ -203,18 +176,18 @@ char CoreComponentManager<Cs...>::AddGroup(bool ifPartialAddimplicitly, bool ifP
 template<typename... Cs>
 void CoreComponentManager<Cs...>::UpdateFreeListForResize(size_t oldSize, size_t newSize) {
     for (; oldSize < newSize; ++oldSize)
-        _entities[oldSize]._next = oldSize + 1;
+        m_entities[oldSize]._next = oldSize + 1;
 }
 
 template<typename... Cs>
 bool CoreComponentManager<Cs...>::CommitGroups() {
-    if (_groupsCommitted) return false;
+    if (m_groupsCommitted) return false;
 
-    PRINT("*****COMMITTING TREES!" << std::endl);
-    for (unique_ptr<BoolExprTree<N>>& tree : _groupManager._exprTrees) {
-        SwingAtComponents(tree.get());
+    PRINT("Commiting trees to components:" << std::endl);
+    for (const unique_ptr<BoolExprTree<N>>& tree : m_groupManager.GetExpressionTrees()) {
+        PropagateExprTreesToComponentArrays(tree.get());
     }
-    _groupsCommitted = true;
+    m_groupsCommitted = true;
     return true;
 }
 
@@ -223,39 +196,39 @@ template<typename... As>
 EntityMeta CoreComponentManager<Cs...>::AddEntity(As *... cmps) {
 
     // If we are out of memory, resize the array
-    if (_entities.size() <= _entityFreeHead) {
-        size_t oldSize = _entities.size();
-        _entities.resize(_entities.size() * (size_t)2);
-        UpdateFreeListForResize(oldSize, _entities.size());
-        _modIndices.resize(_entities.size(), std::numeric_limits<size_t>::max());
+    if (m_entities.size() <= m_entityFreeHead) {
+        size_t oldSize = m_entities.size();
+        m_entities.resize(m_entities.size() * (size_t)2);
+        UpdateFreeListForResize(oldSize, m_entities.size());
+        m_modIndices.resize(m_entities.size(), std::numeric_limits<size_t>::max());
     }
 
     // Get entity from the free list
-    size_t entityInd = _entityFreeHead;
-    _entityFreeHead = _entities[entityInd]._next;
+    size_t entityInd = m_entityFreeHead;
+    m_entityFreeHead = m_entities[entityInd]._next;
     size_t newUniqueID = CURRENT_UNIQUE_ID++;
-    _entities[entityInd]._metaData.UniqueID = (uint32_t)newUniqueID; // update its unique ID before DELETE, shows that it will be KILLED!
+    m_entities[entityInd]._metaData.UniqueID = (uint32_t)newUniqueID; // update its unique ID before DELETE, shows that it will be KILLED!
 
     // Get the mod Ind for the current modification record, or make one and update the mod index tracker
     size_t modInd;
-    if (_modIndices[entityInd] != std::numeric_limits<size_t>::max()) {
-        modInd = _modIndices[entityInd];
+    if (m_modIndices[entityInd] != std::numeric_limits<size_t>::max()) {
+        modInd = m_modIndices[entityInd];
     }
     else {
-        modInd = _NEWAndADD_Components.size();
-        _NEWAndADD_Components.emplace_back();
+        modInd = m_CompModCommands.size();
+        m_CompModCommands.emplace_back();
     }
-    _modIndices[entityInd] = modInd;
+    m_modIndices[entityInd] = modInd;
 
     // Write to the mod record
-    _NEWAndADD_Components[modInd]._meta.UniqueID = (uint32_t)newUniqueID;
-    _NEWAndADD_Components[modInd]._meta.Handle = (uint32_t)entityInd;
+    m_CompModCommands[modInd]._meta.UniqueID = (uint32_t)newUniqueID;
+    m_CompModCommands[modInd]._meta.Handle = (uint32_t)entityInd;
     // Set the new bits for the component bit vector
-    AddComponentBitVectorByTypes<As...>(&_NEWAndADD_Components[modInd]._new);
-    _NEWAndADD_Components.back()._add = _NEWAndADD_Components[modInd]._new;
+    AddComponentBitVectorByTypes<As...>(&m_CompModCommands[modInd]._new);
+    m_CompModCommands.back()._add = m_CompModCommands[modInd]._new;
     // Add all components to the component array
-    (_NEWAndADD_Components[modInd]._addCompInds.insert_or_assign(getTypeIndex<As>(),
-                                                                 static_cast<ComponentArray<As, N>*>(_componentArrs[getTypeIndex<As>()].get())->RegisterNewComponent(cmps)), ...);
+    (m_CompModCommands[modInd]._addCompInds.insert_or_assign(getTypeIndex<As>(),
+                                                             static_cast<ComponentArray<As, N>*>(_componentArrs[getTypeIndex<As>()].get())->RegisterNewComponent(cmps)), ...);
 
     return { (uint32_t)entityInd, (uint32_t)newUniqueID };
 }
@@ -263,23 +236,23 @@ EntityMeta CoreComponentManager<Cs...>::AddEntity(As *... cmps) {
 template<typename... Cs>
 bool CoreComponentManager<Cs...>::DeleteEntity(uint32_t handle, uint32_t uniqueID) {
     // If the entity ID doesnt match, dont bother
-    if (_entities[handle]._metaData._uniqueID != uniqueID) return false;
+    if (m_entities[handle]._metaData._uniqueID != uniqueID) return false;
     PRINT("Attempting to DELETE (" << handle << ", " << uniqueID << ") " << std::endl);
     // update free list head
-    _entities[handle]._next = _entityFreeHead;
-    _entityFreeHead = handle;
+    m_entities[handle]._next = m_entityFreeHead;
+    m_entityFreeHead = handle;
     // TONOTE: THIS MOST IMPORTANT LINE, prevents additional operations from being performed on the entity
-    _entities[handle]._metaData._uniqueID = 0;
+    m_entities[handle]._metaData._uniqueID = 0;
     // set an entity to be changed, apply as 0 components will get it deleted from everything
-    _modIndices[handle] = _NEWAndADD_Components.size();
-    _NEWAndADD_Components.emplace_back(); // assumes this sets the NEW and ADD to 0, which it should!
-    _NEWAndADD_Components.back()._meta.Handle = handle;
-    _NEWAndADD_Components.back()._meta._uniqueID = uniqueID;
+    m_modIndices[handle] = m_CompModCommands.size();
+    m_CompModCommands.emplace_back(); // assumes this sets the NEW and ADD to 0, which it should!
+    m_CompModCommands.back()._meta.Handle = handle;
+    m_CompModCommands.back()._meta._uniqueID = uniqueID;
 
     // All SHUOLD be 0s so that adds work correctly
     for (size_t i = 0; i < N; ++i) {
-        assert(_NEWAndADD_Components.back()._new.at(i) == 0);
-        assert(_NEWAndADD_Components.back()._add.at(i) == 0);
+        assert(m_CompModCommands.back()._new.at(i) == 0);
+        assert(m_CompModCommands.back()._add.at(i) == 0);
     }
 }
 

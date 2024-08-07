@@ -70,7 +70,7 @@ struct Entity {
 };
 
 template <size_t N>
-struct NEWandADDComponents {
+struct ComponentModCommand {
     EntityMeta _meta = {0, 0};
     std::array<size_t, N> _new;
     std::array<size_t, N> _add;
@@ -113,7 +113,7 @@ public:
     }
 
 private:
-    // Helper struct to recursively search for the index of a type in the template parameter lis
+    // Helper struct to recursively search for the index of a type in the template parameter list (AT COMPILE TIME!)
     template <typename T, typename U, typename... Types>
     static constexpr size_t getTypeIndexHelper(size_t index) {
         if constexpr (std::is_same_v<T, U>) {
@@ -133,21 +133,25 @@ private:
 
     size_t CURRENT_UNIQUE_ID = 1;
 
-    std::vector<Entity<N>> _entities;
-    size_t _entityFreeHead;
-    std::vector<NEWandADDComponents<N>> _NEWAndADD_Components{};
-    std::vector<size_t> _modIndices;
-    std::array<size_t, N> _tags;
+    std::vector<Entity<N>> m_entities;
+    size_t m_entityFreeHead;
 
-    BoolExprTreeManager<N> _groupManager;
+    std::vector<ComponentModCommand<N>> m_CompModCommands{};
+    std::vector<size_t> m_modIndices;
+    std::array<size_t, N> m_tags;
+
+    BoolExprTreeManager<N> m_groupManager;
+    bool m_groupsCommitted = false;
 
 public:
     CoreComponentManager();
 
-    const std::array<size_t, N>& GetTags() {  return _tags; }
-    const Entity<N>& GetEntity(size_t ind) { return _entities[ind]; }
-    template <typename C> // TRUST THE METAPROGRAMMING
-    ComponentArray<C, N>* GetComponentArray() { return static_cast<ComponentArray<C, N>*>(_componentArrs[getTypeIndex<C>()].get()); }
+    [[maybe_unused]] const std::array<size_t, N>& GetTags() {  return m_tags; }
+    [[maybe_unused]] const Entity<N>& GetEntity(size_t ind) { return m_entities[ind]; }
+    template <typename C>
+    ComponentArray<C, N>* GetComponentArray() {
+        return static_cast<ComponentArray<C, N>*>(_componentArrs[getTypeIndex<C>()].get());
+    }
 
     template <typename... As>
     void AddComponentBitVectorByTypes(std::array<size_t, N>* arr);
@@ -157,8 +161,6 @@ public:
 
     void UpdateFreeListForResize(size_t oldSize, size_t newSize);
 
-    bool _groupsCommitted = false;
-
     /*
     * GContains and GNotContains
     */
@@ -166,48 +168,44 @@ public:
     char AddGroup(bool ifPartialAddimplicitly=false, bool ifPartialMakeTree=false);
 
     bool GroupsAreCommited() {
-        return _groupsCommitted;
+        return m_groupsCommitted;
     }
 
     bool CommitGroups();
 
 
-    template <typename... As>
-    EntityMeta AddEntity(As*... cmps);
+    // Add an entity with the given components (NOTE: queued)
+    template <typename... CompTypes>
+    EntityMeta AddEntity(CompTypes*... cmps);
 
+    // Delete an entity with handle and ID, MUST be valid combination of handle and ID (NOTE: queued)
     bool DeleteEntity(uint32_t handle, uint32_t uniqueID);
 
-    template <typename... As>
-    bool AddComponents(EntityMeta meta, As*... cmps);
+    // Add components of types CompTypes to the entity, using pointers to copied default values. (NOTE: queued)
+    template <typename... CompTypes>
+    bool AddComponents(EntityMeta meta, CompTypes*... cmps);
 
-
-
-    template <typename... As>
+    // Delete components of CompType from entity (NOTE: queued)
+    template <typename... CompTypes>
     bool DeleteComponents(EntityMeta meta);
 
-    // TODO : this is really problematic,,, need to get these classes OUT!
-
-    void DEBUG_PRINT_RECORD(NEWandADDComponents<N>& mod);
-
-
+    // Commit all queued changes to entities
     bool CommitEntityChanges();
 
     /*
-    * TODO:
     * If the entities signiture implies the system's, then the system can and should perform on it
     */
     bool EntityValidForSystem(size_t entHandle, BoolExprBitVector<N>& systemExpr) {
-        return BitImplies(_entities[entHandle]._components, systemExpr);
+        return BitImplies(m_entities[entHandle]._components, systemExpr);
     }
 
     /*
-    * TODO : rename this
     * Given a bool expr tree, add its nodes to the component arrays which are relevant to it!
     */
-    void SwingAtComponents(BoolExprTree<N>* tree) {
-        std::unordered_set<size_t> unhandledCompoents(tree->_explicitAffectedComponents);
+    void PropagateExprTreesToComponentArrays(BoolExprTree<N>* tree) {
+        std::unordered_set<size_t> unhandledComponents(tree->GetExplicitlyAffectedComponents());
 
-        BoolExprNode<N>* node = tree->_root.get();
+        BoolExprNode<N>* node = tree->GetRoot();
         while (node) {
             std::unordered_set<size_t> affectedComponents;
             GetHasBits(node->_bitRep, affectedComponents);
@@ -215,11 +213,11 @@ public:
             // For each component which the current node affects explicitly,
             // if an above node hasn't already contibuted to a component, make this node the contributor!
             for (size_t comp : affectedComponents) {
-                auto it = unhandledCompoents.find(comp);
-                if (it == unhandledCompoents.end()) continue;
-                unhandledCompoents.erase(it);
+                auto it = unhandledComponents.find(comp);
+                if (it == unhandledComponents.end()) continue;
+                unhandledComponents.erase(it);
 
-                PRINT("Affixxing for " << comp << " with tree " << tree << std::endl);
+                PRINT("Affixing for " << comp << " with tree " << tree << std::endl);
                 _componentArrs[comp]->AffixExprTreeToComponentArray(node);
             }
 
@@ -232,6 +230,8 @@ public:
 
 #endif
 
+
+// NOTES ON THE WORK:
 // make | array
 // for N
 //    for bits
@@ -258,11 +258,11 @@ For c in all-to-change:
 	else 				: COMP.MOD_ADD(ent, ind)// add to BOTH (and we have ind already), or neither (AND WRITE DIRECT?)
 
 If the group don't change for a component, it doesn't need to add it to its management arr
-	- UNLESS its an ADD, then it gets put in place
+	- UNLESS it's an ADD, then it gets put in place
 
 We do removes first so nobody should be getting updated unduly or overwriting a new guy
 	- THIS IS VITAL!!!!
-	- holy shit I had already said it... but it was not well formed...
+	- I had already said it! but it was not well-formed... new version hopefully works
 
 If new and old comp-type map to same group, Just replace in-place?
 If they are different, then we don't need to worry??

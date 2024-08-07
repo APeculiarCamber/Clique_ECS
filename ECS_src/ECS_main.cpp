@@ -1,15 +1,7 @@
-// ECS_main.cpp : This file contains the 'main' function. Program execution begins and ends there.
-
 #include <iostream>
 #include <fstream>
-#include <unordered_set>
 #include <vector>
-#include <chrono>
 #include <ctime>
-#include <algorithm>
-#include "SystemImpl.h"
-#include "CoreComponentManagerImpl.h"
-#include "ECS_Manager.h"
 #include "RateChangeBenchmark.h"
 #include "ExampleECS.h"
 
