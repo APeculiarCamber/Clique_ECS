@@ -53,7 +53,7 @@ size_t ComponentGroupNode<C, N>::MakeRoom(SparseSet<C, HashedSet> &sset, int64_t
 
     // Make unmatched removals, FROM SPECIFICALLY THE BACK, THIS INVARIANT IS IMPORTANT
     while (UPT_added.size() < UPT_removed.size()) {
-        sset.DeleteSingle(sset._indexMap[UPT_removed.back()], --_endInd);
+        sset.DeleteSingle(sset.m_indexMap[UPT_removed.back()], --_endInd);
         UPT_removed.pop_back();
     }
 
@@ -102,8 +102,8 @@ void ComponentGroupNode<C, N>::CommitFillInUpdate(SparseSet<C, HashedSet> &sset,
     UPT_added.clear();
     UPT_removed.clear();
 
-    _compStart = sset._components.data();
-    _handlerStart = sset._handlers.data();
+    _compStart = sset.m_components.data();
+    _handlerStart = sset.m_handlers.data();
 }
 
 template<typename C, size_t N>
@@ -203,7 +203,7 @@ bool ComponentArray<Comp, N, false>::CommitComponentUpdates(size_t totalNumEntit
     PRINT("Component " << componentIndex << ": Adding " << _compDiff << std::endl);
 
     // this makes a very good place to parallelize, since each group does not touch any other...
-    _componentSet.AccomodateAdd(_compDiff);
+    _componentSet.AccommodateAdd(_compDiff);
 
     // Far left will propogate the MAKE room accordingly
     ComponentGroupNode<Comp, N>** farLeft = _groupLeaves.data();

@@ -7,8 +7,6 @@
 #include <iostream>
 
 
-unsigned long BitScanForward64(uint64_t bits);
-
 //#define __forceinline __attribute__((always_inline))
 #define __forceinline inline
 
@@ -64,17 +62,5 @@ void Test();
 
 
 
-
-
-
-unsigned long BitScanForward64(uint64_t bits) {
-    // TODO TODO TODO
-    std::cout << "TODO: please implement ME!" << std::endl;
-    abort();
-}
-
-void Test() {
-    std::cout << "print" << std::endl;
-}
 
 #endif

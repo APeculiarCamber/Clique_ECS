@@ -11,82 +11,78 @@ class SparseSet {};
 
 #define HASHED_SparseSet SparseSet<T, true>
 #define ARRAY_SparseSet SparseSet<T, false>
+#define IS_HASHED true
+#define IS_ARRAYED false
 
-/**
- * HASHED_SparseSet
- * @tparam T
- */
+
 template <typename T>
-class SparseSet<T, true> {
+class SparseSet<T, IS_HASHED> {
 public:
-    unordered_map<size_t, size_t> _indexMap;
-    vector<T> _components;
-    vector<size_t> _handlers;
-    size_t _size;
+    unordered_map<size_t, size_t> m_indexMap;
+    vector<T> m_components;
+    vector<size_t> m_handlers;
+    size_t m_size;
 
-    SparseSet() : _size(64), _components(_size), _handlers(_size) { }
+    SparseSet() : m_size(64), m_components(m_size), m_handlers(m_size) { }
 
     void SetEntitySize(size_t numEnt) { }
 
-    T* Get(size_t handler) {  return &_components[_indexMap[handler]]; }
+    T* Get(size_t handler) {  return &m_components[m_indexMap[handler]]; }
 
     size_t AddAtIndex(size_t ind, size_t newHandle, const T& component);
 
     /*
     * 'Deletes' an element by overwriting it with the element at shiftedPos,
-    * UPDATES SHIFTED'S HANDLE BUT NOT DEL'S
+    * UPDATES SHIFT'S HANDLE BUT NOT DEL'S
     */
     size_t DeleteSingle(size_t delPos, size_t shiftedPos);
 
     /*
-    * WARNING ASSUMES THE REGION IS EMPTY, BASCIALLY CONSIDERS IT A DELETE
+    * WARNING ASSUMES THE REGION IS EMPTY, BASICALLY CONSIDERS IT A DELETE
     *
-    * Equivalent to std::copy but also updates the _indexMap.
+    * Equivalent to std::copy but also updates the m_indexMap.
     */
     size_t ShiftRegionTo(size_t start, size_t end, size_t dst);
 
-    void AccomodateAdd(size_t add);
+    void AccommodateAdd(size_t add);
 };
 
-/**
- * ARRAY_SparseSet
- * @tparam T
- */
+
 template <typename T>
-class SparseSet<T, false> {
+class SparseSet<T, IS_ARRAYED> {
 public:
-    vector<size_t> _indexMap;
-    vector<T> _components;
-    vector<size_t> _handlers;
-    size_t _size;
+    vector<size_t> m_indexMap;
+    vector<T> m_components;
+    vector<size_t> m_handlers;
+    size_t m_size;
 
     SparseSet() {
-        _size = 64;
-        _components.resize(_size);
-        _handlers.resize(_size);
-        _indexMap.resize(_size);
+        m_size = 64;
+        m_components.resize(m_size);
+        m_handlers.resize(m_size);
+        m_indexMap.resize(m_size);
     }
 
     void SetEntitySize(size_t numEnt);
 
-    T* Get(size_t handler) { return &_components[_indexMap[handler]]; }
+    T* Get(size_t handler) { return &m_components[m_indexMap[handler]]; }
 
     size_t AddAtIndex(size_t ind, size_t newHandle, const T& component);
 
     /*
     * 'Deletes' an element by overwriting it with the element at shiftedPos,
-    * UPDATES SHIFTED'S HANDLE BUT NOT DEL'S
+    * UPDATES SHIFT'S HANDLE BUT NOT DEL'S
     */
     size_t DeleteSingle(size_t delPos, size_t shiftedPos);
 
     /*
-    * WARNING ASSUMES THE REGION IS EMPTY, BASCIALLY CONSIDERS IT A DELETE
+    * WARNING ASSUMES THE REGION IS EMPTY, BASICALLY CONSIDERS IT A DELETE
     *
-    * Equivalent to std::copy but also updates the _indexMap.
+    * Equivalent to std::copy but also updates the m_indexMap.
     */
     size_t ShiftRegionTo(size_t start, size_t end, size_t dst);
 
-    void AccomodateAdd(size_t add);
+    void AccommodateAdd(size_t add);
 };
 
 #include "ComponentSparseSet.cpp"

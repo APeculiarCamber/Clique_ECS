@@ -2,6 +2,7 @@
 #define BENCHMARK_H
 
 #include <random>
+#include "ECS_Manager.h"
 
 namespace Rate {
     struct Position {
@@ -58,7 +59,6 @@ namespace Rate {
         virtual void Update(float dt) = 0;
     };
 
-    // TODO : this might not actually be the ideal case to show ECS but it does allow me to attempt to polish speeds...
     class PositionBC : public BaseChanger {
     public:
         Position pos{1, 1, 1};
@@ -548,7 +548,7 @@ namespace Rate {
     void FillInVirtualVector(std::vector<BaseChanger*>& vec, const std::vector<size_t>& types, std::ostream& out) {
 
         std::clock_t start = std::clock();
-        // TODO : pop these so we can benchmark them too
+
         for (size_t i = 0; i < types.size(); ++i) {
             switch (types[i]) {
             case 0:
@@ -762,8 +762,6 @@ namespace Rate {
         res->lastFrame = std::clock();
         res->deltaTime = 0;
 
-        // TODO : the system you have now will collapse on this, but you should think about if it actually NEEDS to...
-        // TODO : static assert for the types made into groups, components, systems, etc. if it aint in the manager desc, we aint taking it.
         // I mean obviously we can fix this with system MUST HAVEs
         if (numDerivatives >= 2)
             manager.MakeGroup<GContains<Position, Velocity>, GNotContains<>>();

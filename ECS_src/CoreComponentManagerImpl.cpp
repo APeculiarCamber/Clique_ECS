@@ -89,6 +89,11 @@ bool CoreComponentManager<Cs...>::DeleteComponents(EntityMeta meta) {
     return true;
 }
 
+
+unsigned long BitScanForward64(uint64_t bits) {
+    return __builtin_ctzll(bits);
+}
+
 template<typename... Cs>
 bool CoreComponentManager<Cs...>::CommitEntityChanges() {
     if (m_CompModCommands.size() == 0) return false;
@@ -100,7 +105,7 @@ bool CoreComponentManager<Cs...>::CommitEntityChanges() {
         Entity<N>* ent = &m_entities[mod._meta.Handle];
         ent->_metaData = mod._meta;
 
-        std::array<size_t, N> toInform = mod._new | ent->_components; // TODO : fix this to a function if it dont compile
+        std::array<size_t, N> toInform = mod._new | ent->_components;
 
         for (size_t n = 0; n < N; ++n) {
             size_t info = toInform.at(n);
@@ -111,7 +116,7 @@ bool CoreComponentManager<Cs...>::CommitEntityChanges() {
 
                 unsigned long bit = BitScanForward64(info);
                 size_t bitMask = (((size_t)1) << bit);
-                // TODO:  ensure this works correctly for DELETES!!!!!
+
                 bool isDel = (newN & bitMask) == 0;
                 bool isAdd = (oldN & bitMask) == 0;
                 bool isMove = (addN & bitMask) == 0;
@@ -123,7 +128,7 @@ bool CoreComponentManager<Cs...>::CommitEntityChanges() {
                 */
                 if (isDel)
                     _componentArrs[step + bit]->RemoveComponent(ent->_metaData.Handle, ent->_components);
-                else if (isAdd) // todo : be care of this and overwrite, TODO: ensure that add comp ind are handled right IN HERE!!!
+                else if (isAdd)
                     _componentArrs[step + bit]->AddComponent(ent->_metaData.Handle, mod._addCompInds[step + bit], mod._new);
                 else if (isMove) {
                     PRINT("COMPONENT " << step + bit << " IS A MOVE!" << std::endl);
@@ -131,7 +136,6 @@ bool CoreComponentManager<Cs...>::CommitEntityChanges() {
                 }
                 else
                     _componentArrs[step + bit]->OverwriteComponentForHandle(ent->_metaData.Handle, mod._addCompInds[step + bit], ent->_components, mod._new);
-                // size_t entityHandle, size_t newCompInd, std::array<size_t, N> oldCompID, std::array<size_t, N> newCompID
 
                 // clear the processed bit
                 info &= ~((size_t)1 << bit);
