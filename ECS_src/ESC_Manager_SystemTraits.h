@@ -6,30 +6,18 @@
 #include <tuple>
 #include <functional>
 #include "CoreComponentManagerImpl.h"
-#include "SystemImpl.h"
+#include "ECS_SystemImpl.h"
 
 namespace ECS {
     template<typename... Cs>
     struct ComponentList {
     };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * These struct impls are used to statically analyze and determine properties of system functions.
- * It is aggressively SINEFAE.
+ * It is aggressively SFINAE.
  *
+ * GENERAL IDEA:
  * We have two ways to take input as a system function: Via tuple, or Via individual parameters; in both cases, we generate the required input function by meta-programming.
  * Systems can request the component manager; in that case, the system requires entity IDs.
  * Systems can request the single Resource, distinct from the component system; in that case we take special care to provide it.

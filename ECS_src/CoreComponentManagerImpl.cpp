@@ -230,6 +230,7 @@ EntityMeta CoreComponentManager<Cs...>::AddEntity(As *... cmps) {
     // Set the new bits for the component bit vector
     AddComponentBitVectorByTypes<As...>(&m_CompModCommands[modInd]._new);
     m_CompModCommands.back()._add = m_CompModCommands[modInd]._new;
+
     // Add all components to the component array
     (m_CompModCommands[modInd]._addCompInds.insert_or_assign(getTypeIndex<As>(),
                                                              static_cast<ComponentArray<As, N>*>(_componentArrs[getTypeIndex<As>()].get())->RegisterNewComponent(cmps)), ...);

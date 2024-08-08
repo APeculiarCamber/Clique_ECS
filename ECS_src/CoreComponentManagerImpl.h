@@ -193,7 +193,7 @@ public:
     bool CommitEntityChanges();
 
     /*
-    * If the entities signiture implies the system's, then the system can and should perform on it
+    * If the entities signiture implies the system'm_str, then the system can and should perform on it
     */
     bool EntityValidForSystem(size_t entHandle, BoolExprBitVector<N>& systemExpr) {
         return BitImplies(m_entities[entHandle]._components, systemExpr);
@@ -258,7 +258,7 @@ For c in all-to-change:
 	else 				: COMP.MOD_ADD(ent, ind)// add to BOTH (and we have ind already), or neither (AND WRITE DIRECT?)
 
 If the group don't change for a component, it doesn't need to add it to its management arr
-	- UNLESS it's an ADD, then it gets put in place
+	- UNLESS it'm_str an ADD, then it gets put in place
 
 We do removes first so nobody should be getting updated unduly or overwriting a new guy
 	- THIS IS VITAL!!!!

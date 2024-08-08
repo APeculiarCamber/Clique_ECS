@@ -19,8 +19,12 @@ public:
     BoolExprTreeManager() = default;
     explicit BoolExprTreeManager(std::array<size_t, ArrN>& tags) : m_tags(tags) { }
 
+    // Get the raw BETs as a reference to the list of BETs, please be gentle to it.
     const vector<unique_ptr<BoolExprTree<ArrN>>>& GetExpressionTrees() const { return m_exprTrees; }
+
+    // Get the tag bits (1 iff tag).
     const std::array<size_t, ArrN>& GetTagBits() const { return m_tags; }
+
     /*
     * Add a new group to as many boolean trees as can take it.
     * Distinctions are made appropriately for when orderings are BROKEN. HOPEFULLY!!!!!!

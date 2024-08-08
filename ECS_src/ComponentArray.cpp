@@ -6,37 +6,37 @@
 template<typename C, size_t N>
 bool ComponentGroupNode<C, N>::ContainsExpr(BoolExprBitVector<N> &bitRep) {
     // Lower level expression IMPLY higher level containing expressions
-    if (_hasBitRep) return BitImplies(bitRep, _bitRep);
+    if (m_hasBitRep) return BitImplies(bitRep, m_bitRep);
     // If we are a bitrep-less child, we contain it iff: our parent contains it, and the explicit child contains NONE of it
-    ComponentGroupNode<C, N>* matureSibling = (_parent->_left->_hasBitRep) ? _parent->_left : _parent->_right;
-    return _parent->ContainsExpr(bitRep) && BitImpliesNot(bitRep, matureSibling->_bitRep);
+    ComponentGroupNode<C, N>* matureSibling = (m_parent->m_left->m_hasBitRep) ? m_parent->m_left : m_parent->m_right;
+    return m_parent->ContainsExpr(bitRep) && BitImpliesNot(bitRep, matureSibling->m_bitRep);
 }
 
 template<typename C, size_t N>
 bool ComponentGroupNode<C, N>::ContainsExpr(array<size_t, N> &bitRep) {
     // Lower level expression IMPLY higher level containing expressions
-    if (_hasBitRep) return BitImplies(bitRep, _bitRep);
+    if (m_hasBitRep) return BitImplies(bitRep, m_bitRep);
     // If we are a bitrep-less child, we contain it iff: our parent contains it, and the explicit child contains NONE of it
-    ComponentGroupNode<C, N>* matureSibling = (_parent->_left->_hasBitRep) ? _parent->_left.get() : _parent->_right.get();
-    return _parent->ContainsExpr(bitRep) && BitImpliesNot(bitRep, matureSibling->_bitRep);
+    ComponentGroupNode<C, N>* matureSibling = (m_parent->m_left->m_hasBitRep) ? m_parent->m_left.get() : m_parent->m_right.get();
+    return m_parent->ContainsExpr(bitRep) && BitImpliesNot(bitRep, matureSibling->m_bitRep);
 }
 
 template<typename C, size_t N>
 bool ComponentGroupNode<C, N>::ContainsExpr_AssumeParent(BoolExprBitVector<N> &bitRep) {
     // Lower level expression IMPLY higher level containing expressions
-    if (_hasBitRep) return BitImplies(bitRep, _bitRep);
+    if (m_hasBitRep) return BitImplies(bitRep, m_bitRep);
     // If we are a bitrep-less child, we contain it iff: our parent contains it, and the explicit child contains NONE of it
-    ComponentGroupNode<C, N>* matureSibling = (_parent->_left->_hasBitRep) ? _parent->_left.get() : _parent->_right.get();
-    return BitImpliesNot(bitRep, matureSibling->_bitRep);
+    ComponentGroupNode<C, N>* matureSibling = (m_parent->m_left->m_hasBitRep) ? m_parent->m_left.get() : m_parent->m_right.get();
+    return BitImpliesNot(bitRep, matureSibling->m_bitRep);
 }
 
 template<typename C, size_t N>
 bool ComponentGroupNode<C, N>::ContainsExpr_AssumeParent(array<size_t, N> &bitRep) {
     // Lower level expression IMPLY higher level containing expressions
-    if (_hasBitRep) return BitImplies(bitRep, _bitRep);
+    if (m_hasBitRep) return BitImplies(bitRep, m_bitRep);
     // If we are a bitrep-less child, we contain it iff: our parent contains it, and the explicit child contains NONE of it
-    ComponentGroupNode<C, N>* matureSibling = (_parent->_left->_hasBitRep) ? _parent->_left.get() : _parent->_right.get();
-    return BitImpliesNot(bitRep, matureSibling->_bitRep);
+    ComponentGroupNode<C, N>* matureSibling = (m_parent->m_left->m_hasBitRep) ? m_parent->m_left.get() : m_parent->m_right.get();
+    return BitImpliesNot(bitRep, matureSibling->m_bitRep);
 }
 
 template<typename C, size_t N>
@@ -44,35 +44,35 @@ template<bool HashedSet>
 size_t ComponentGroupNode<C, N>::MakeRoom(SparseSet<C, HashedSet> &sset, int64_t leftRequest,
                                           ComponentGroupNode<C, N> **nextGroup) {
 
-    int64_t toReqFromRight = leftRequest + UPT_added.size() - UPT_removed.size();
-    PRINT(leftRequest << "->" << s << "->" << toReqFromRight << ",");
+    int64_t toReqFromRight = leftRequest + m_UPT_added.size() - m_UPT_removed.size();
+    PRINT(leftRequest << "->" << m_str << "->" << toReqFromRight << ",");
     // If we need more room to the right, get it immediately
     if (toReqFromRight > 0 && *nextGroup != nullptr) {
         (*nextGroup)->MakeRoom(sset, toReqFromRight, std::next(nextGroup));
     }
 
     // Make unmatched removals, FROM SPECIFICALLY THE BACK, THIS INVARIANT IS IMPORTANT
-    while (UPT_added.size() < UPT_removed.size()) {
-        sset.DeleteSingle(sset.m_indexMap[UPT_removed.back()], --_endInd);
-        UPT_removed.pop_back();
+    while (m_UPT_added.size() < m_UPT_removed.size()) {
+        sset.DeleteSingle(sset.m_indexMap[m_UPT_removed.back()], --m_endInd);
+        m_UPT_removed.pop_back();
     }
 
     // either shift in bulk to the left, or to the right (BUT NOT BEFORE GETTING OTHERS TO SHIFT MAYBE!!!)
     if (leftRequest < 0) {
-        size_t startOfDest = _startInd + leftRequest;
-        size_t start = std::max(_endInd + leftRequest, _startInd);
-        size_t end = _endInd;
+        size_t startOfDest = m_startInd + leftRequest;
+        size_t start = std::max(m_endInd + leftRequest, m_startInd);
+        size_t end = m_endInd;
         // SHIFT LEFT
         sset.ShiftRegionTo(start, end, startOfDest);
-        _startInd += leftRequest, _endInd += leftRequest;
+        m_startInd += leftRequest, m_endInd += leftRequest;
     }
     else if (leftRequest > 0) {
-        size_t startOfDest = _endInd;
-        size_t start = _startInd;
-        size_t end = std::min(_startInd + leftRequest, _endInd);
+        size_t startOfDest = m_endInd;
+        size_t start = m_startInd;
+        size_t end = std::min(m_startInd + leftRequest, m_endInd);
         // SHIFT RIGHT
         sset.ShiftRegionTo(start, end, startOfDest);
-        _startInd += leftRequest, _endInd += leftRequest;
+        m_startInd += leftRequest, m_endInd += leftRequest;
     }
 
     // only moveroom if it wasn't called already, the next callee will know that they have space to move into
@@ -80,42 +80,42 @@ size_t ComponentGroupNode<C, N>::MakeRoom(SparseSet<C, HashedSet> &sset, int64_t
         (*nextGroup)->MakeRoom(sset, toReqFromRight, std::next(nextGroup));
     }
 
-    return _startInd;
+    return m_startInd;
 }
 
 template<typename C, size_t N>
 template<bool HashedSet>
 void ComponentGroupNode<C, N>::CommitFillInUpdate(SparseSet<C, HashedSet> &sset, const vector<C> &registedComponents) {
     // Assumes MakeRoom already called, which would cause removed.size <= add.size
-    while (UPT_removed.size() > 0) {
-        PRINT("TRYING FOR SWAPPING REGISTERED COMPONENT: " << UPT_added.back().second << std::endl);
-        sset.AddAtIndex(UPT_removed.back(), UPT_added.back().first, registedComponents[UPT_added.back().second]);
-        UPT_added.pop_back();
-        UPT_removed.pop_back();
+    while (m_UPT_removed.size() > 0) {
+        PRINT("TRYING FOR SWAPPING REGISTERED COMPONENT: " << m_UPT_added.back().second << std::endl);
+        sset.AddAtIndex(m_UPT_removed.back(), m_UPT_added.back().first, registedComponents[m_UPT_added.back().second]);
+        m_UPT_added.pop_back();
+        m_UPT_removed.pop_back();
     }
 
     // Only adds remain
-    for (const auto& [handle, compID] : UPT_added) {
-        sset.AddAtIndex(_endInd++, handle, registedComponents[compID]);
+    for (const auto& [handle, compID] : m_UPT_added) {
+        sset.AddAtIndex(m_endInd++, handle, registedComponents[compID]);
     }
 
-    UPT_added.clear();
-    UPT_removed.clear();
+    m_UPT_added.clear();
+    m_UPT_removed.clear();
 
-    _compStart = sset.m_components.data();
-    _handlerStart = sset.m_handlers.data();
+    m_compStart = sset.m_components.data();
+    m_handlerStart = sset.m_handlers.data();
 }
 
 template<typename C, size_t N>
 ComponentGroupNode<C, N>::ComponentGroupNode(BoolExprBitVector<N> &rep, bool hasBitRep,
-                                             BoolExprBitVector<N> &sharedGroups) : _bitRep(rep), _hasBitRep(hasBitRep) {
-    _numSharedComponents = 0;
+                                             BoolExprBitVector<N> &sharedGroups) : m_bitRep(rep), m_hasBitRep(hasBitRep) {
+    m_numSharedComponents = 0;
 
     for (size_t n = 0; n < N; ++n) {
-        _componentsSharedWithGroup.at(n) = sharedGroups.caresAbout.at(n) & sharedGroups.mustHave.at(n);
+        m_componentsSharedWithGroup.at(n) = sharedGroups.caresAbout.at(n) & sharedGroups.mustHave.at(n);
 
-        std::bitset<sizeof(std::size_t) * CHAR_BIT> bits(_componentsSharedWithGroup.at(n));
-        _numSharedComponents += bits.count();
+        std::bitset<sizeof(std::size_t) * CHAR_BIT> bits(m_componentsSharedWithGroup.at(n));
+        m_numSharedComponents += bits.count();
     }
 }
 
@@ -124,29 +124,29 @@ ComponentGroupNode<C, N>::ComponentGroupNode(BoolExprBitVector<N> &rep, bool has
 
 template<typename Comp, size_t N>
 Comp *ComponentArray<Comp, N, false>::GetEntityComponent(size_t handle) {
-    return _componentSet.Get(handle);
+    return m_componentSet.Get(handle);
 }
 
 template<typename Comp, size_t N>
 size_t ComponentArray<Comp, N, false>::RegisterNewComponent(Comp *comp) {
-    _registeredNewComponents.push_back(*comp);
-    return _registeredNewComponents.size() - 1;
+    m_registeredNewComponents.push_back(*comp);
+    return m_registeredNewComponents.size() - 1;
 }
 
 template<typename Comp, size_t N>
 bool
-ComponentArray<Comp, N, false>::AddComponent(size_t entityHandle, size_t newCompInd, std::array<size_t, N> newCompID) {
+ComponentArray<Comp, N, false>::AddComponent(size_t entHandle, size_t newCompInd, std::array<size_t, N> newCompID) {
     ComponentGroupNode<Comp, N>* newGroup = GetBestGroup(newCompID);
-    newGroup->UPT_added.emplace_back(entityHandle, newCompInd);
-    _compDiff++;
+    newGroup->AddUPTForAddition(entHandle, newCompInd);
+    m_compDiff++;
     return true;
 }
 
 template<typename Comp, size_t N>
 bool ComponentArray<Comp, N, false>::RemoveComponent(size_t entityHandle, std::array<size_t, N> oldCompID) {
     ComponentGroupNode<Comp, N>* oldGroup = GetBestGroup(oldCompID);
-    oldGroup->UPT_removed.push_back(entityHandle);
-    _compDiff--;
+    oldGroup->AddUPTForDeletion(entityHandle);
+    m_compDiff--;
     return true;
 }
 
@@ -157,9 +157,9 @@ bool ComponentArray<Comp, N, false>::MoveComponent(size_t entityHandle, std::arr
     ComponentGroupNode<Comp, N>* newBest = GetBestGroup(newCompID);
     if (oldBest == newBest) return true;
 
-    oldBest->UPT_removed.push_back(entityHandle);
-    newBest->UPT_added.emplace_back(entityHandle, _registeredNewComponents.size());
-    _registeredNewComponents.push_back(*_componentSet.Get(entityHandle));
+    oldBest->AddUPTForDeletion(entityHandle);
+    newBest->AddUPTForAddition(entityHandle, m_registeredNewComponents.size());
+    m_registeredNewComponents.push_back(*m_componentSet.Get(entityHandle));
 
     return true;
 }
@@ -173,69 +173,69 @@ bool ComponentArray<Comp, N, false>::OverwriteComponentForHandle(size_t entityHa
     ComponentGroupNode<Comp, N>* newBest = GetBestGroup(newCompID);
     if (oldBest == newBest) {
         // If we can, just do it simply in place,
-        *_componentSet.Get(entityHandle) = _registeredNewComponents[newCompInd];
+        *m_componentSet.Get(entityHandle) = m_registeredNewComponents[newCompInd];
         return true;
     }
-    oldBest->UPT_removed.push_back(entityHandle);
-    newBest->UPT_added.emplace_back(entityHandle, newCompInd);
+    oldBest->AddUPTForDeletion(entityHandle);
+    newBest->AddUPTForAddition(entityHandle, newCompInd);
 
     return true;
 }
 
 template<typename Comp, size_t N>
 void ComponentArray<Comp, N, false>::PercolateUpOffsets(ComponentGroupNode<Comp, N> *node) {
-    if (!node->_left) return;
+    if (!node->m_left) return;
     // Process bottom up
-    PercolateUpOffsets(node->_left.get());
-    PercolateUpOffsets(node->_right.get());
+    PercolateUpOffsets(node->m_left.get());
+    PercolateUpOffsets(node->m_right.get());
 
-    assert(node->_left->_endInd == node->_right->_startInd);
+    assert(node->m_left->m_endInd == node->m_right->m_startInd);
 
-    node->_startInd = node->_left->_startInd;
-    node->_endInd = node->_right->_endInd;
-    node->_compStart = node->_left->_compStart;
-    node->_handlerStart = node->_left->_handlerStart;
+    node->m_startInd = node->m_left->m_startInd;
+    node->m_endInd = node->m_right->m_endInd;
+    node->m_compStart = node->m_left->m_compStart;
+    node->m_handlerStart = node->m_left->m_handlerStart;
 }
 
 template<typename Comp, size_t N>
 bool ComponentArray<Comp, N, false>::CommitComponentUpdates(size_t totalNumEntities) {
-    _componentSet.SetEntitySize(totalNumEntities);
-    PRINT("Component " << componentIndex << ": Adding " << _compDiff << std::endl);
+    m_componentSet.SetEntitySize(totalNumEntities);
+    PRINT("Component " << componentIndex << ": Adding " << m_compDiff << std::endl);
 
     // this makes a very good place to parallelize, since each group does not touch any other...
-    _componentSet.AccommodateAdd(_compDiff);
+    m_componentSet.AccommodateAdd(m_compDiff);
 
     // Far left will propogate the MAKE room accordingly
-    ComponentGroupNode<Comp, N>** farLeft = _groupLeaves.data();
-    PRINT("Room for " << componentIndex << " (leaves=" << _groupLeaves.size() << "): ");
-    _groupLeaves.front()->MakeRoom(_componentSet, 0, std::next(farLeft));
+    ComponentGroupNode<Comp, N>** farLeft = m_groupLeaves.data();
+    PRINT("Room for " << componentIndex << " (leaves=" << m_groupLeaves.size() << "): ");
+    m_groupLeaves.front()->MakeRoom(m_componentSet, 0, std::next(farLeft));
     PRINT(std::endl);
     PRINT("Room made, now commiting group changes: " << std::endl);
-    for (size_t g = 0; g < (_groupLeaves.size() - 1); g++) {
-        _groupLeaves[g]->CommitFillInUpdate(_componentSet, _registeredNewComponents);
+    for (size_t g = 0; g < (m_groupLeaves.size() - 1); g++) {
+        m_groupLeaves[g]->CommitFillInUpdate(m_componentSet, m_registeredNewComponents);
     }
     PRINT("The final offsets for " << componentIndex << ": ");
-    for (size_t g = 0; g < (_groupLeaves.size() - 1); g++) {
-        PRINT(_groupLeaves[g]->_startInd << "->" << _groupLeaves[g]->s << "->" << _groupLeaves[g]->_endInd << ",");
+    for (size_t g = 0; g < (m_groupLeaves.size() - 1); g++) {
+        PRINT(m_groupLeaves[g]->m_startInd << "->" << m_groupLeaves[g]->m_str << "->" << m_groupLeaves[g]->m_endInd << ",");
     }
     PRINT(std::endl);
-    for (size_t g = 0; g < (_groupLeaves.size() - 1); g++) {
-        Comp* start =  _groupLeaves[g]->GetStart();
-        Comp* end = _groupLeaves[g]->GetEnd();
+    for (size_t g = 0; g < (m_groupLeaves.size() - 1); g++) {
+        Comp* start =  m_groupLeaves[g]->GetStart();
+        Comp* end = m_groupLeaves[g]->GetEnd();
     }
     PRINT(std::endl);
 
-    PercolateUpOffsets(_root.get());
+    PercolateUpOffsets(m_root.get());
 
-    _registeredNewComponents.clear();
-    _compDiff = 0;
+    m_registeredNewComponents.clear();
+    m_compDiff = 0;
     return false;
 }
 
 template<typename Comp, size_t N>
 ComponentArray<Comp, N, false>::ComponentArray(size_t t) : componentIndex(t) {
     BoolExprBitVector<N> rootRep = MakeFromSpecVec<N>(vector<size_t>{ componentIndex }, vector<size_t>{});
-    _root.reset(new ComponentGroupNode<Comp, N>(rootRep, true, rootRep));
+    m_root.reset(new ComponentGroupNode<Comp, N>(rootRep, true, rootRep));
     CreateGroupLeavesArray();
 }
 
@@ -244,16 +244,16 @@ ComponentArray<Comp, N, false>::ComponentArray(size_t t) : componentIndex(t) {
 
 template<typename Comp, size_t N>
 Comp *ComponentArray<Comp, N, false>::GetComponentForEntity(size_t handle) {
-    return _componentSet.Get(handle);
+    return m_componentSet.Get(handle);
 }
 
 template<typename Comp, size_t N>
 ComponentGroupNode<Comp, N> *ComponentArray<Comp, N, false>::GetBestGroup(BoolExprBitVector<N> &expr) {
-    ComponentGroupNode<Comp, N>* best = _root.get();
+    ComponentGroupNode<Comp, N>* best = m_root.get();
     if (!best->ContainsExpr_AssumeParent(expr)) return nullptr;
-    while (best->_left.get()) {
-        if (best->_left->ContainsExpr_AssumeParent(expr)) best = best->_left.get();
-        else if (best->_right->ContainsExpr_AssumeParent(expr)) best = best->_right.get();
+    while (best->m_left.get()) {
+        if (best->m_left->ContainsExpr_AssumeParent(expr)) best = best->m_left.get();
+        else if (best->m_right->ContainsExpr_AssumeParent(expr)) best = best->m_right.get();
         else return best;
     }
     return best;
@@ -261,11 +261,11 @@ ComponentGroupNode<Comp, N> *ComponentArray<Comp, N, false>::GetBestGroup(BoolEx
 
 template<typename Comp, size_t N>
 ComponentGroupNode<Comp, N> *ComponentArray<Comp, N, false>::GetBestGroup(array<size_t, N> &expr) {
-    ComponentGroupNode<Comp, N>* best = _root.get();
+    ComponentGroupNode<Comp, N>* best = m_root.get();
     if (!best->ContainsExpr_AssumeParent(expr)) return nullptr;
-    while (best->_left.get()) {
-        if (best->_left->ContainsExpr_AssumeParent(expr)) best = best->_left.get();
-        else if (best->_right->ContainsExpr_AssumeParent(expr)) best = best->_right.get();
+    while (best->m_left.get()) {
+        if (best->m_left->ContainsExpr_AssumeParent(expr)) best = best->m_left.get();
+        else if (best->m_right->ContainsExpr_AssumeParent(expr)) best = best->m_right.get();
         else throw std::runtime_error("THIS SHOULD NOT HAPPEN: ENITIY ADDED AT NOT END");
     }
     return best;
@@ -274,51 +274,51 @@ ComponentGroupNode<Comp, N> *ComponentArray<Comp, N, false>::GetBestGroup(array<
 template<typename Comp, size_t N>
 ComponentGroupNode<Comp, N> *
 ComponentArray<Comp, N, false>::AppendToNode(ComponentGroupNode<Comp, N> *myNode, BoolExprNode<N> *repNode,
-                                             std::string s, bool isLeft) {
+                                             const std::string& s, bool isLeft) {
     if (repNode == nullptr) return nullptr;
 
-    myNode->s = "~" + s + "~";
-    PRINT("    Got for: " << myNode->_hasBitRep << ": " << (myNode->_bitRep.mustHave.at(0) & myNode->_bitRep.caresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
+    myNode->m_str = "~" + s + "~";
+    PRINT("    Got for: " << myNode->m_hasBitRep << ": " << (myNode->m_bitRep.mustHave.at(0) & myNode->m_bitRep.caresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
     if (repNode->_left) {
         // If isLeft, we should use the new bit rep for shared groups in components, but if not left, we should use our parents
-        myNode->_left.reset(new ComponentGroupNode<Comp, N>(
+        myNode->m_left.reset(new ComponentGroupNode<Comp, N>(
                 repNode->_left->_bitRep, repNode->_left->_hasBitRep, isLeft ? repNode->_left->_bitRep : repNode->_bitRep));
-        myNode->_left->_parent = myNode;
+        myNode->m_left->m_parent = myNode;
 
-        AppendToNode(myNode->_left.get(), repNode->_left.get(), s + "L", isLeft);
+        AppendToNode(myNode->m_left.get(), repNode->_left.get(), s + "L", isLeft);
     }
     if (repNode->_right) {
-        myNode->_right.reset(new ComponentGroupNode<Comp, N>(
+        myNode->m_right.reset(new ComponentGroupNode<Comp, N>(
                 repNode->_right->_bitRep, repNode->_right->_hasBitRep, repNode->_bitRep));
-        myNode->_right->_parent = myNode;
+        myNode->m_right->m_parent = myNode;
 
-        AppendToNode(myNode->_right.get(), repNode->_right.get(), s + "R", false);
+        AppendToNode(myNode->m_right.get(), repNode->_right.get(), s + "R", false);
     }
 
     if (!repNode->_left && !repNode->_right) {
         assert(repNode->_parent == nullptr || (repNode->_parent->_left != nullptr && repNode->_parent->_right != nullptr));
-        PRINT("    Leaf for: " << myNode->_hasBitRep << ": " << (myNode->_bitRep.mustHave.at(0) & myNode->_bitRep.caresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
+        PRINT("    Leaf for: " << myNode->m_hasBitRep << ": " << (myNode->m_bitRep.mustHave.at(0) & myNode->m_bitRep.caresAbout.at(0)) << ", " << s << " with " << myNode->GetNumShared() << " shares" << std::endl);
     }
     return myNode;
 }
 
 template<typename Comp, size_t N>
 void ComponentArray<Comp, N, false>::AppendLeavesInOrder(ComponentGroupNode<Comp, N> *node) {
-    if (node->_left == nullptr) {
-        _groupLeaves.push_back(node);
-        PRINT(node->s << ":" << node->_startInd << "->" << node->_endInd << ", ");
+    if (node->m_left == nullptr) {
+        m_groupLeaves.push_back(node);
+        PRINT(node->m_str << ":" << node->m_startInd << "->" << node->m_endInd << ", ");
         return;
     }
-    AppendLeavesInOrder(node->_left.get());
-    AppendLeavesInOrder(node->_right.get());
+    AppendLeavesInOrder(node->m_left.get());
+    AppendLeavesInOrder(node->m_right.get());
 }
 
 template<typename Comp, size_t N>
 void ComponentArray<Comp, N, false>::CreateGroupLeavesArray() {
     PRINT("Making Leave guy for " << componentIndex << ": ");
-    _groupLeaves.clear();
-    AppendLeavesInOrder(_root.get());
-    _groupLeaves.push_back(nullptr); // closing \0
+    m_groupLeaves.clear();
+    AppendLeavesInOrder(m_root.get());
+    m_groupLeaves.push_back(nullptr); // closing \0
     PRINT(std::endl);
 }
 
@@ -335,25 +335,25 @@ void ComponentArray<Comp, N, false>::AffixExprTreeToComponentArray(BoolExprNode<
         // **LEFT**
         BoolExprNode<N>* left = root->_left.get();
         if (left) {
-            _root->_left.reset(AppendToNode(new ComponentGroupNode<Comp, N>(left->_bitRep, left->_hasBitRep, left->_bitRep), root->_left.get(), std::to_string(componentIndex) + "*L", true));
-            _root->_left->_parent = _root.get();
+            m_root->m_left.reset(AppendToNode(new ComponentGroupNode<Comp, N>(left->_bitRep, left->_hasBitRep, left->_bitRep), root->_left.get(), std::to_string(componentIndex) + "*L", true));
+            m_root->m_left->m_parent = m_root.get();
         }
         else if (root->_right.get()) {
-            _root->_left.reset(new ComponentGroupNode<Comp, N>(_root->_bitRep, false, _root->_bitRep));
-            _root->_left->s = std::to_string(componentIndex) + "*L";
-            _root->_left->_parent = _root.get();
+            m_root->m_left.reset(new ComponentGroupNode<Comp, N>(m_root->m_bitRep, false, m_root->m_bitRep));
+            m_root->m_left->m_str = std::to_string(componentIndex) + "*L";
+            m_root->m_left->m_parent = m_root.get();
         }
         // **RIGHT**
         BoolExprNode<N>* right = root->_right.get();
         if (right) {
             // RIGHT takes the shared components of its root, NOT ITSELF
-            _root->_right.reset(AppendToNode(new ComponentGroupNode<Comp, N>(right->_bitRep, right->_hasBitRep, root->_bitRep), root->_right.get(), std::to_string(componentIndex) + "*R", false));
-            _root->_right->_parent = _root.get();
+            m_root->m_right.reset(AppendToNode(new ComponentGroupNode<Comp, N>(right->_bitRep, right->_hasBitRep, root->_bitRep), root->_right.get(), std::to_string(componentIndex) + "*R", false));
+            m_root->m_right->m_parent = m_root.get();
         }
         else if (root->_left.get()) {
-            _root->_right.reset(new ComponentGroupNode<Comp, N>(_root->_bitRep, false, _root->_bitRep));
-            _root->_right->s = std::to_string(componentIndex) + "*R";
-            _root->_right->_parent = _root.get();
+            m_root->m_right.reset(new ComponentGroupNode<Comp, N>(m_root->m_bitRep, false, m_root->m_bitRep));
+            m_root->m_right->m_str = std::to_string(componentIndex) + "*R";
+            m_root->m_right->m_parent = m_root.get();
         }
     }
 
@@ -362,11 +362,11 @@ void ComponentArray<Comp, N, false>::AffixExprTreeToComponentArray(BoolExprNode<
 
     else {
         PRINT("APPENDING TO EXISTING ROOT" << std::endl);
-        // The root of the BoolExprTree is going to be the LEFT child of the single component root of this components array's tree
-        _root->_left.reset(AppendToNode(new ComponentGroupNode<Comp, N>(root->_bitRep, root->_hasBitRep, root->_bitRep), root, std::to_string(componentIndex) + "*L", true));
-        _root->_right.reset(new ComponentGroupNode<Comp, N>(_root->_bitRep, false, _root->_bitRep));
-        _root->_right->s = std::to_string(componentIndex) + "*R";
-        _root->_right->_parent = _root.get();
+        // The root of the BoolExprTree is going to be the LEFT child of the single component root of this components array'm_str tree
+        m_root->m_left.reset(AppendToNode(new ComponentGroupNode<Comp, N>(root->_bitRep, root->_hasBitRep, root->_bitRep), root, std::to_string(componentIndex) + "*L", true));
+        m_root->m_right.reset(new ComponentGroupNode<Comp, N>(m_root->m_bitRep, false, m_root->m_bitRep));
+        m_root->m_right->m_str = std::to_string(componentIndex) + "*R";
+        m_root->m_right->m_parent = m_root.get();
     }
     CreateGroupLeavesArray();
 }

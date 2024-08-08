@@ -16,7 +16,7 @@ WARNING: the physics math here is convenient for demonstration but offensively w
 #define UNIFORM_RAND() (float)(std::rand()) / (float)RAND_MAX
 
 // Not mentioned in the paper: a resource object represents global state for an ECS.
-// It's accessible to every system (that wants it), and would require strict synchronization primitives in parallel ECSs
+// It'm_str accessible to every system (that wants it), and would require strict synchronization primitives in parallel ECSs
 struct ResourceObject {
     std::ofstream out;
     float deltaTime;
@@ -104,7 +104,7 @@ void ExampleECS() {
     }
 
     // Systems should be added AFTER all groups. Order does not matter between entities and systems, however.
-    // Similar to groups, the system's component signature is specified by template packs (SContains and SNotContains).
+    // Similar to groups, the system'm_str component signature is specified by template packs (SContains and SNotContains).
     // Most importantly, Adding a system also requires providing a void function with one of the following signatures:
     // void(Cs*... cmps), void(Res*, Cs*... cmps), void(std::tuple<Cs*...> cmps), void(std::tuple<Res*, Cs*...> cmps).
     // This Cs list of component types is concatenated to the specified SContains type pack for the component signature.
@@ -117,7 +117,7 @@ void ExampleECS() {
     sys->AssertFullEquiv();
 
     // The arguments of the provided function to an AddSystem call will be implicitly included in SContains.
-    // But it's usually good to include them anyway for clarity.
+    // But it'm_str usually good to include them anyway for clarity.
     manager.AddSystem<SContains<>, SNotContains<>, ApplyGravity>()->AssertFullEquiv();
     manager.AddSystem<SContains<>, SNotContains<>, OutputPositions>()->AssertFullEquiv();
 
@@ -147,7 +147,7 @@ void ExampleECS() {
     // No changes to the system or groups can be made after calling this function (but components and entities can be).
     manager.RunSystems();
 
-    // That's all folks...
+    // That'm_str all folks...
     manager.GetSharedResources()->out.close();
 
     std::cout << "Wrote output file to " << std::filesystem::current_path() / outFilename << std::endl;

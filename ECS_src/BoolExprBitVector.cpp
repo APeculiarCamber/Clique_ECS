@@ -8,7 +8,6 @@ template<size_t N>
 BoolExprBitVector<N> MakeFromSpecVec(const vector<size_t> &has, const vector<size_t> &notHas) {
     BoolExprBitVector<N> outVec {.mustHave{}, .caresAbout{}};
 
-
     // Add the NEEDS/HAS
     for (size_t h : has) {
         size_t block = h / (sizeof(size_t) * CHAR_BIT);

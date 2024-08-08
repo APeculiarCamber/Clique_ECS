@@ -12,7 +12,7 @@
 #define TEMP_SIZED template <size_t N>
 using namespace std;
 
-// NOTE: treating this as a C-style structure for clarity that it should be treated like proper data
+// NOTE: This is treated as a C-style structure for clarity that it should be treated like proper data
 
 /**
  * A pair of bit masks.

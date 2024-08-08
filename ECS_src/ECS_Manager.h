@@ -34,7 +34,7 @@ namespace ECS {
         Base_SystemFunc* AddSystem();
 
 
-        /*
+        /**
         * MakeGroup attempts to create a group with a specified set of groups and WITHOUT another specified set of groups.
         *
         * MakeGroup is of the form: MakeGroup<GContains<...>, GNotContains<...>>();
@@ -45,7 +45,7 @@ namespace ECS {
             _componentManager.template AddGroup<HasComps, NotHasComps>(ifPartialAddimplicitly, ifPartialMakeTree);
         }
 
-        /*
+        /**
         * MakeGroup attempts to create a group with a specified set of groups and WITHOUT another specified set of groups.
         *
         * MakeGroup is of the form: MakeGroup<GContains<...>, GNotContains<...>>();
@@ -58,7 +58,7 @@ namespace ECS {
 
         std::vector<std::function<void(Res*, Manager<Res, ComponentList<Cs...>>*)>> _oneShotSystems;
 
-        /*
+        /**
         * Add a function with a specific signature: void(Res*, Manager<Res, ComponentList<Cs...>>*).
         * These systems are called at the end of each tick to perform cleanup, and global management.
         *

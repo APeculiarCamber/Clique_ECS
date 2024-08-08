@@ -194,7 +194,7 @@ SystemFunc<SYSTEM_EXTRACT(AllCs, ConCs, NonConCs, Args, FullArgs, FuncTraits, fu
     // TOPORT: see if we can't constexpr some of this
     // Get the best group based on expression
     tightestGroups = std::make_tuple(std::get<ComponentArray<Args, N>*>(managers)->GetBestGroup(expr)...);
-    // Assign true to tuple of booleans if corresponding group has exactly equivalent (<-->) expression to this system's
+    // Assign true to tuple of booleans if corresponding group has exactly equivalent (<-->) expression to this system'm_str
     // TAKE CARE: this assumes that ordering of Args... is maintained, this assumption is used by Partial Group systems
     equivs = std::make_tuple(std::get<ComponentGroupNode<Args, N>*>(tightestGroups)->IsEquivalent(expr)...);
 

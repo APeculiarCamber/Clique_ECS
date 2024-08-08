@@ -96,8 +96,8 @@ bool BoolExprNode<ArrN>::CanAdd(BoolExprBitVector<ArrN> &bitRep) {
 
     if (ContainsExpr_AssumeParent(bitRep)) {
         if (_left == nullptr) return true;
-        // if (_left->IsContainedByExpr(bitRep)) return true; // We can check on left, but NOT right
-        //if (_right->IsContainedByExpr(bitRep)) return true;
+        // if (m_left->IsContainedByExpr(bitRep)) return true; // We can check on left, but NOT right
+        //if (m_right->IsContainedByExpr(bitRep)) return true;
         if (_left->ContainsExpr_AssumeParent(bitRep)) return _left->CanAdd(bitRep);
         if (_right->ContainsExpr_AssumeParent(bitRep)) return _right->CanAdd(bitRep);
         return false;
@@ -109,8 +109,8 @@ template<size_t ArrN>
 bool BoolExprNode<ArrN>::CanBeAddedAsExplicit(BoolExprBitVector<ArrN> &bitRep) {
     if (ContainsExpr_AssumeParent(bitRep)) {
         if (_left == nullptr) return _explicitRep;
-        // if (_left->IsContainedByExpr(bitRep)) return _explicitRep;
-        // if (_right->IsContainedByExpr(bitRep)) return false;
+        // if (m_left->IsContainedByExpr(bitRep)) return _explicitRep;
+        // if (m_right->IsContainedByExpr(bitRep)) return false;
         if (_left->ContainsExpr_AssumeParent(bitRep)) return _left->CanBeAddedAsExplicit(bitRep);
         if (_right->ContainsExpr_AssumeParent(bitRep)) return false; // FALSE
         return false;
@@ -119,7 +119,7 @@ bool BoolExprNode<ArrN>::CanBeAddedAsExplicit(BoolExprBitVector<ArrN> &bitRep) {
 }
 
 template<size_t ArrN>
-void BoolExprNode<ArrN>::PropogateExplicitComponents(unordered_set<size_t> &explicitComponents,
+void BoolExprNode<ArrN>::PropagateExplicitComponents(unordered_set<size_t> &explicitComponents,
                                                      const array<size_t, ArrN> &tags) {
     if (!_explicitRep) return;
     if (_hasBitRep) {
@@ -128,7 +128,7 @@ void BoolExprNode<ArrN>::PropogateExplicitComponents(unordered_set<size_t> &expl
         GetHasBits(explComps, explicitComponents);
         PRINT(_hasBitRep << std::endl);
     }
-    if (_left) _left->PropogateExplicitComponents(explicitComponents);
+    if (_left) _left->PropagateExplicitComponents(explicitComponents);
 }
 
 
@@ -151,7 +151,7 @@ char BoolExprTree<ArrN>::Add(BoolExprBitVector<ArrN> &a, const array<size_t, Arr
     }
 
     m_explicitAffectedComponents.clear();
-    m_root->PropogateExplicitComponents(m_explicitAffectedComponents, tags);
+    m_root->PropagateExplicitComponents(m_explicitAffectedComponents, tags);
     PRINT("For this add, the tree has affected components: ");
     for (auto a : m_explicitAffectedComponents) PRINT(a << ", ");
     PRINT(std::endl);
@@ -177,7 +177,7 @@ char BoolExprTree<ArrN>::AddImplicit(BoolExprBitVector<ArrN> &a) {
     }
 
     m_explicitAffectedComponents.clear();
-    m_root->PropogateExplicitComponents(m_explicitAffectedComponents);
+    m_root->PropagateExplicitComponents(m_explicitAffectedComponents);
     PRINT("For this add, the tree has affected components: ");
     for (auto affectedComp : m_explicitAffectedComponents) PRINT(affectedComp << ", ");
     PRINT(std::endl);

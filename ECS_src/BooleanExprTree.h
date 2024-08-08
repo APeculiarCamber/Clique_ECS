@@ -28,13 +28,13 @@ public:
 
     explicit BoolExprNode(BoolExprNode<ArrN>* parent) : _parent(parent), _explicitRep(false), _hasBitRep(false), _bitRep{} {}
     BoolExprNode(BoolExprNode<ArrN>* parent, BoolExprBitVector<ArrN>& bitRep, bool explRep=true)
-        : _parent(parent), _explicitRep(parent == nullptr || (parent->_explicitRep) && explRep),
+        : _parent(parent), _explicitRep((parent == nullptr || parent->_explicitRep) && explRep),
           _bitRep{ .mustHave = bitRep.mustHave, .caresAbout = bitRep.caresAbout }, _hasBitRep(true) {}
 
     /**
     * Collect all the component types which are included as ONs in the far left side EXPLICIT nodes
     */
-    void PropogateExplicitComponents(unordered_set<size_t>& explicitComponents, const std::array<size_t, ArrN>& tags = {});
+    void PropagateExplicitComponents(unordered_set<size_t>& explicitComponents, const std::array<size_t, ArrN>& tags = {});
 
     /**
     * Returns true if the node contains the bit representation
@@ -48,17 +48,15 @@ public:
 
     /**
     *   NOTE : currently only adds to leaves, which is manageable but NOT ideal
-    *   Assumes TREE will handle a re-root, so it DOES NOT
-    *	The main assumption this allows is parent has already done ContainedBy checks on its kids
+    *   Assumes TREE will handle a re-root, so it does NOT do such.
+    *	Assumes this allows is parent has already done ContainedBy checks on its kids
     */
     BoolExprNode<ArrN>* AddExpr(BoolExprBitVector<ArrN>& bitRep);
 
-
     /**
-    *   Assumes TREE will handle a re-root, so it DOES NOT
-    *	The main assumption this allows is parent has already done ContainedBy checks on its kids
-    *
-    *   This method inserts the bit rep, if it can and GUARENTEES that the
+    *   NOTE : currently only adds to leaves, which is manageable but NOT ideal
+    *   Assumes TREE will handle a re-root, so it does NOT do such.
+    *	Assumes this allows is parent has already done ContainedBy checks on its kids
     */
     BoolExprNode<ArrN>* AddExprImplicit(BoolExprBitVector<ArrN>& bitRep, bool onFarLeft = true);
 
@@ -67,6 +65,9 @@ public:
     // Returns true if the boolean expression can be added explicitly (meaning directly and without modification)
     bool CanBeAddedAsExplicit(BoolExprBitVector<ArrN>& bitRep);
 };
+
+
+
 
 template <size_t ArrN>
 class BoolExprTree {

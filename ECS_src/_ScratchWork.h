@@ -11,7 +11,7 @@
 #include <chrono>
 #include <ctime>
 #include <algorithm>
-#include "SystemImpl.h"
+#include "ECS_SystemImpl.h"
 #include "CoreComponentManagerImpl.h"
 #include "ECS_Manager.h"
 #include "RateChangeBenchmark.h"

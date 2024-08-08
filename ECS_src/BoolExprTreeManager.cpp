@@ -7,10 +7,10 @@
 template<size_t ArrN>
 char BoolExprTreeManager<ArrN>::AddGroup(const vector<size_t> &has, const vector<size_t> &hasNot,
                                          bool addNonImplicitlyIfImplicit, bool createNewTreeIfImplicit) {
-    // Hueristic:
+    // Heuristic:
     // If we can add as explicit: DO IT!
     // If we cannot add, make a new tree
-    // If we can add as implicit, MORE COMPLICATED, MORE COMPLEX USE AND MANAGEMENT!!!!!
+    // If we can add as implicit, it is more complicated, especially for management!
     // Trees maintain themselves independently...
     // If we add it implicitly, components it adds should not be added as explicits NOR should those component arrays be affect by the group
 

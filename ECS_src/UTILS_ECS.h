@@ -48,9 +48,9 @@
         for (auto h : hasSet) PRINT(h << ","); \
         PRINT(":: HasNOT: "); \
         for (auto h : hasNot) PRINT(h << ","); \
-        PRINT("} hasSet leading group: " << groupQ->s << std::endl); \
+        PRINT("} hasSet leading group: " << groupQ->m_str << std::endl); \
         hasSet.clear(); hasNot.clear(); \
-        GetHasAndHasNotBits(groupQ->_bitRep, hasSet, hasNot); \
+        GetHasAndHasNotBits(groupQ->m_bitRep, hasSet, hasNot); \
         PRINT("    with EXPR {HAS: "); \
         for (auto h : hasSet) PRINT(h << ","); \
         PRINT(":: HasNOT: "); \

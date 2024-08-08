@@ -9,10 +9,10 @@ using namespace std;
 template <typename T, bool UseHashMap>
 class SparseSet {};
 
-#define HASHED_SparseSet SparseSet<T, true>
-#define ARRAY_SparseSet SparseSet<T, false>
 #define IS_HASHED true
 #define IS_ARRAYED false
+#define HASHED_SparseSet SparseSet<T, IS_HASHED>
+#define ARRAY_SparseSet SparseSet<T, IS_ARRAYED>
 
 
 template <typename T>
